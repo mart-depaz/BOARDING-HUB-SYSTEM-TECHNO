@@ -6,7 +6,7 @@ from django.db.models import Count, Q, Avg
 from django.db.utils import NotSupportedError
 from functools import wraps
 from collections import OrderedDict
-from core.models import UserProfile, Property, Student, BoardingAssignment, EmergencyLog, MaintenanceRequest, Department, Program, Survey, SurveySection, SurveyQuestion, SurveyResponse, SurveyAnswer, TrashLog
+from core.models import UserProfile, Property, Student, BoardingAssignment, EmergencyLog, MaintenanceRequest, Department, Program, Survey, SurveySection, SurveyQuestion, SurveyResponse, SurveyAnswer
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from core.email_backend import send_email_with_feedback
@@ -907,6 +907,7 @@ def survey_create(request):
         category = request.POST.get('category', '').strip()
         description = request.POST.get('description', '').strip()
         status = request.POST.get('status', 'draft')
+        recipient_type = request.POST.get('recipient_type', 'students')
         require_property_info = request.POST.get('require_property_info') == 'on'
         
         if not title:
@@ -921,6 +922,7 @@ def survey_create(request):
                 survey.category = category
             survey.description = description
             survey.status = status
+            survey.recipient_type = recipient_type
             survey.require_property_info = require_property_info
             survey.save()
         else:
@@ -935,6 +937,7 @@ def survey_create(request):
                 category=category or 'Student Registration',
                 description=description,
                 status=status,
+                recipient_type=recipient_type,
                 unique_code=unique_code,
                 require_property_info=require_property_info,
                 created_by=request.user
@@ -1963,502 +1966,33 @@ def survey_take(request, unique_code):
 
 @school_admin_required
 def delete_survey(request, survey_id):
-    """Delete a survey (move to trash)"""
-    survey = get_object_or_404(Survey, id=survey_id, school=request.user.profile.school)
-    
+    """Delete a survey."""
+    profile = request.user.profile
+    survey = get_object_or_404(Survey, id=survey_id, school=profile.school)
+
     if request.method == 'POST':
-        from datetime import timedelta
-        from django.utils import timezone
-        
-        # Create trash log entry
-        permanent_delete_date = timezone.now() + timedelta(days=30)
-        
-        TrashLog.objects.create(
-            school=request.user.profile.school,
-            item_type='survey',
-            item_id=survey.id,
-            item_name=survey.title,
-            item_data={
-                'title': survey.title,
-                'description': survey.description,
-                'status': survey.status,
-                'unique_code': survey.unique_code,
-            },
-            deleted_by=request.user,
-            permanent_delete_at=permanent_delete_date,
-        )
-        
-        # Delete the survey
         survey_title = survey.title
         survey.delete()
-        
-        messages.success(request, f'Survey "{survey_title}" moved to trash. It will be permanently deleted on {permanent_delete_date.strftime("%B %d, %Y")}.')
+        messages.success(request, f'Survey "{survey_title}" has been deleted.')
         return redirect('admin_panel:survey_list')
-    
+
     return render(request, 'admin_panel/confirm_delete_survey.html', {'survey': survey})
 
 
 @school_admin_required
-def trash(request):
-    """View trash with categorized deleted items"""
-    profile = request.user.profile
-    
-    # Get trash logs (only non-permanently-deleted and not-restored)
-    trash_logs = TrashLog.objects.filter(school=profile.school, is_permanently_deleted=False, restored_at__isnull=True).order_by('-deleted_at')
-    
-    # Filter by type if requested
-    selected_type = request.GET.get('type', '')
-    if selected_type:
-        trash_logs = trash_logs.filter(item_type=selected_type)
-    
-    # Group by item type
-    from itertools import groupby
-    grouped_items = {}
-    for item_type_val, items in groupby(trash_logs, key=lambda x: x.item_type):
-        grouped_items[item_type_val] = list(items)
-    
-    item_types = TrashLog.ITEM_TYPES
-    
-    context = {
-        'trash_items': trash_logs,
-        'grouped_items': grouped_items,
-        'item_types': item_types,
-        'selected_type': selected_type,
-    }
-    
-    return render(request, 'admin_panel/trash.html', context)
-
-
-
-
-
-@school_admin_required
-def restore_all_trash(request):
-    """Restore all items in trash"""
-    if request.method == 'POST':
-        from django.utils import timezone
-        from django.contrib.auth.models import User as DjangoUser
-        trash_logs = TrashLog.objects.filter(
-            school=request.user.profile.school,
-            is_permanently_deleted=False,
-            restored_at__isnull=True
-        )
-
-        count = trash_logs.count()
-
-        # Attempt per-item restoration where feasible
-        for item in trash_logs:
-            try:
-                restored = False
-                data = item.item_data or {}
-
-                if item.item_type == 'survey':
-                    # Try to restore by id, otherwise recreate minimal survey from snapshot
-                    if Survey.objects.filter(id=item.item_id, school=request.user.profile.school).exists():
-                        Survey.objects.filter(id=item.item_id, school=request.user.profile.school).update(status=data.get('status', 'active'))
-                        restored = True
-                    else:
-                        Survey.objects.create(
-                            school=request.user.profile.school,
-                            title=data.get('title', 'Restored Survey'),
-                            description=data.get('description', ''),
-                            status=data.get('status', 'active'),
-                            unique_code=data.get('unique_code') or f"REST-{secrets.token_hex(6)}",
-                        )
-                        restored = True
-
-                elif item.item_type == 'student':
-                    # Try to find user by username or email and recreate Student record
-                    username = data.get('username') or None
-                    email = data.get('email') or None
-                    user = None
-                    if username:
-                        user = DjangoUser.objects.filter(username=username).first()
-                    if not user and email:
-                        user = DjangoUser.objects.filter(email__iexact=email).first()
-                    if user:
-                        Student.objects.get_or_create(user=user, defaults={
-                            'student_id': data.get('student_id') or f"restored-{user.id}",
-                            'school': request.user.profile.school,
-                            'year_level': data.get('year_level') or '',
-                            'emergency_contact_name': data.get('emergency_contact_name') or '',
-                            'emergency_contact_phone': data.get('emergency_contact_phone') or '',
-                        })
-                        restored = True
-
-                elif item.item_type == 'user':
-                    # Recreate a simple user if it does not exist
-                    username = data.get('username') or data.get('email')
-                    if username and not DjangoUser.objects.filter(username=username).exists():
-                        DjangoUser.objects.create(
-                            username=username,
-                            email=data.get('email', ''),
-                            first_name=data.get('first_name', ''),
-                            last_name=data.get('last_name', ''),
-                        )
-                        restored = True
-
-                # Mark as restored (even if underlying restoration couldn't be fully performed)
-                item.restored_at = timezone.now()
-                item.save()
-            except Exception:
-                # Ensure restored flag is still set so items won't keep showing in trash
-                try:
-                    item.restored_at = timezone.now()
-                    item.save()
-                except Exception:
-                    pass
-
-        messages.success(request, f'{count} item(s) have been restored.')
-    
-    return redirect('admin_panel:trash')
-
-
-@school_admin_required
-def delete_all_trash_permanent(request):
-    """Permanently delete all items in trash"""
-    if request.method == 'POST':
-        trash_logs = TrashLog.objects.filter(
-            school=request.user.profile.school,
-            is_permanently_deleted=False
-        )
-        
-        count = trash_logs.count()
-        trash_logs.update(is_permanently_deleted=True)
-        
-        messages.success(request, f'{count} item(s) have been permanently deleted.')
-    
-    return redirect('admin_panel:trash')
-
-
-@school_admin_required
-def trash(request):
-    """Trash management - view and restore/delete items"""
-    profile = request.user.profile
-    
-    # Get all trash items for this school
-    trash_items = TrashLog.objects.filter(
-        school=profile.school,
-        is_permanently_deleted=False,
-        restored_at__isnull=True
-    ).order_by('-deleted_at')
-    
-    # Filter by item type if specified
-    item_type = request.GET.get('type', '')
-    if item_type:
-        trash_items = trash_items.filter(item_type=item_type)
-    
-    # Group by item type
-    from itertools import groupby
-    grouped_items = {}
-    for item_type_val, items in groupby(trash_items, key=lambda x: x.item_type):
-        grouped_items[item_type_val] = list(items)
-
-    # Prepare item types with counts for filter UI
-    item_types_with_counts = []
-    for value, label in TrashLog.ITEM_TYPES:
-        count = trash_items.filter(item_type=value).count()
-        item_types_with_counts.append((value, label, count))
-
-    context = {
-        'trash_items': trash_items,
-        'grouped_items': grouped_items,
-        'item_types_with_counts': item_types_with_counts,
-        'selected_type': item_type,
-    }
-    
-    return render(request, 'admin_panel/trash.html', context)
-
-
-@school_admin_required
-def restore_trash_item(request, item_id):
-    """Restore an item from trash"""
-    profile = request.user.profile
-    trash_item = get_object_or_404(TrashLog, id=item_id, school=profile.school)
-
-    if not trash_item.can_restore():
-        messages.error(request, 'This item cannot be restored.')
-        return redirect('admin_panel:trash')
-
-    # Mark as restored and attempt to restore underlying object where possible
-    from django.utils import timezone
-    restored = False
-    trash_item.restored_at = timezone.now()
-    # Attempt restoration based on item_type
-    try:
-        if trash_item.item_type == 'survey':
-            # Surveys were soft-closed; try to reopen
-            Survey.objects.filter(id=trash_item.item_id, school=profile.school).update(status=trash_item.item_data.get('status', 'active'))
-            restored = True
-        elif trash_item.item_type == 'student':
-            # Try to recreate the Student record if missing
-            data = trash_item.item_data or {}
-            from django.contrib.auth.models import User as DjangoUser
-            username = data.get('username')
-            email = data.get('email')
-            user = None
-            if username:
-                user = DjangoUser.objects.filter(username=username).first()
-            if not user and email:
-                user = DjangoUser.objects.filter(email=email).first()
-            if user:
-                # Create Student if not exists
-                student_obj, created = Student.objects.get_or_create(user=user, defaults={
-                    'student_id': data.get('student_id') or f"restored-{user.id}",
-                    'school': profile.school,
-                    'year_level': data.get('year_level') or '',
-                    'emergency_contact_name': data.get('emergency_contact_name') or '',
-                    'emergency_contact_phone': data.get('emergency_contact_phone') or '',
-                })
-                restored = True
-        elif trash_item.item_type == 'property':
-            # Property restoration may require manual steps; skip automatic for now
-            restored = False
-        elif trash_item.item_type == 'user':
-            # Try to recreate a simple user account from snapshot
-            data = trash_item.item_data or {}
-            from django.contrib.auth.models import User as DjangoUser
-            username = data.get('username') or data.get('email')
-            if username and not DjangoUser.objects.filter(username=username).exists():
-                try:
-                    DjangoUser.objects.create(
-                        username=username,
-                        email=data.get('email', ''),
-                        first_name=data.get('first_name', ''),
-                        last_name=data.get('last_name', ''),
-                    )
-                    restored = True
-                except Exception:
-                    restored = False
-        elif trash_item.item_type == 'response':
-            # Survey responses restoration not implemented automatically
-            restored = False
-        elif trash_item.item_type == 'user':
-            # User restoration not implemented automatically
-            restored = False
-    except Exception:
-        restored = False
-
-    trash_item.save()
-    if restored:
-        messages.success(request, f'{trash_item.item_name} has been restored.')
-    else:
-        messages.warning(request, f'{trash_item.item_name} marked as restored in trash. Manual restoration may be required for underlying data.')
-    return redirect('admin_panel:trash')
-
-
-@school_admin_required
-def delete_trash_item_permanent(request, item_id):
-    """Permanently delete an item from trash"""
-    profile = request.user.profile
-    trash_item = get_object_or_404(TrashLog, id=item_id, school=profile.school)
-
-    if trash_item.is_permanently_deleted:
-        messages.error(request, 'This item is already permanently deleted.')
-        return redirect('admin_panel:trash')
-
-    item_name = trash_item.item_name
-    # Attempt to remove underlying resource
-    try:
-        if trash_item.item_type == 'survey':
-            Survey.objects.filter(id=trash_item.item_id, school=profile.school).delete()
-        elif trash_item.item_type == 'student':
-            # Delete student record if exists
-            Student.objects.filter(id=trash_item.item_id, school=profile.school).delete()
-        elif trash_item.item_type == 'property':
-            Property.objects.filter(id=trash_item.item_id, school=profile.school).delete()
-        elif trash_item.item_type == 'response':
-            SurveyResponse.objects.filter(id=trash_item.item_id).delete()
-        elif trash_item.item_type == 'user':
-            User.objects.filter(id=trash_item.item_id).delete()
-    except Exception:
-        # ignore errors but continue
-        pass
-
-    trash_item.is_permanently_deleted = True
-    trash_item.save()
-
-    messages.success(request, f'{item_name} has been permanently deleted.')
-    return redirect('admin_panel:trash')
-
-
-@school_admin_required
-def delete_survey(request, survey_id):
-    """Delete a survey (move to trash)"""
-    profile = request.user.profile
-    survey = get_object_or_404(Survey, id=survey_id, school=profile.school)
-    
-    if request.method == 'POST':
-        # Create trash log
-        from django.utils import timezone
-        from datetime import timedelta
-        
-        TrashLog.objects.create(
-            school=profile.school,
-            item_type='survey',
-            item_id=survey.id,
-            item_name=survey.title,
-            item_data={
-                'title': survey.title,
-                'description': survey.description,
-                'status': survey.status,
-                'unique_code': survey.unique_code,
-            },
-            deleted_by=request.user,
-            permanent_delete_at=timezone.now() + timedelta(days=30)
-        )
-        
-        # Soft delete - mark status as closed or add a deleted_at field
-        survey.status = 'closed'  # Or implement soft delete with is_deleted field
-        survey.save()
-        
-        messages.success(request, f'Survey "{survey.title}" has been moved to trash. It will be permanently deleted in 30 days.')
-        return redirect('admin_panel:survey_list')
-    
-    context = {'survey': survey}
-    return render(request, 'admin_panel/confirm_delete_survey.html', context)
-
-
-@school_admin_required
 def delete_student(request, student_id):
-    """Delete a student (move to trash)"""
+    """Delete a student."""
     profile = request.user.profile
     student = get_object_or_404(Student, id=student_id, school=profile.school)
-    
+
     if request.method == 'POST':
-        # Create trash log
-        from django.utils import timezone
-        from datetime import timedelta
-        
-        TrashLog.objects.create(
-            school=profile.school,
-            item_type='student',
-            item_id=student.id,
-            item_name=f"{student.user.get_full_name() or student.user.username} ({student.student_id})",
-            item_data={
-                'student_id': student.student_id,
-                'first_name': student.user.first_name,
-                'last_name': student.user.last_name,
-                'email': student.user.email,
-                'username': student.user.username,
-                'department': student.department.code if student.department and student.department.code else (student.department.name if student.department else None),
-                'program': student.program.code if student.program and student.program.code else (student.program.name if student.program else None),
-                'year_level': student.year_level,
-                'phone': getattr(getattr(student.user, 'profile', None), 'phone', ''),
-                'emergency_contact_name': student.emergency_contact_name,
-                'emergency_contact_phone': student.emergency_contact_phone,
-            },
-            deleted_by=request.user,
-            permanent_delete_at=timezone.now() + timedelta(days=30)
-        )
-        
-        # Delete the student (the user account will also be deleted via CASCADE or we keep it)
+        student_name = student.user.get_full_name() or student.user.username
         student.delete()
-        
-        messages.success(request, f'Student "{student.user.get_full_name() or student.user.username}" has been moved to trash. It will be permanently deleted in 30 days.')
+        messages.success(request, f'Student "{student_name}" has been deleted.')
         return redirect('admin_panel:database')
-    
-    context = {'student': student}
-    return render(request, 'admin_panel/confirm_delete_student.html', context)
 
 
-@school_admin_required
-def restore_all_trash(request):
-    """Restore all items from trash"""
-    profile = request.user.profile
-    
-    if request.method == 'POST':
-        from django.utils import timezone
-        from django.contrib.auth.models import User as DjangoUser
 
-        trash_items = TrashLog.objects.filter(
-            school=profile.school,
-            is_permanently_deleted=False,
-            restored_at__isnull=True
-        )
-        count = trash_items.count()
+    return render(request, 'admin_panel/confirm_delete_student.html', {'student': student})
 
-        for item in trash_items:
-            try:
-                restored = False
-                data = item.item_data or {}
-
-                if item.item_type == 'survey':
-                    if Survey.objects.filter(id=item.item_id, school=profile.school).exists():
-                        Survey.objects.filter(id=item.item_id, school=profile.school).update(status=data.get('status', 'active'))
-                        restored = True
-                    else:
-                        Survey.objects.create(
-                            school=profile.school,
-                            title=data.get('title', 'Restored Survey'),
-                            description=data.get('description', ''),
-                            status=data.get('status', 'active'),
-                            unique_code=data.get('unique_code') or f"REST-{secrets.token_hex(6)}",
-                        )
-                        restored = True
-
-                elif item.item_type == 'student':
-                    username = data.get('username') or None
-                    email = data.get('email') or None
-                    user = None
-                    if username:
-                        user = DjangoUser.objects.filter(username=username).first()
-                    if not user and email:
-                        user = DjangoUser.objects.filter(email__iexact=email).first()
-                    if user:
-                        Student.objects.get_or_create(user=user, defaults={
-                            'student_id': data.get('student_id') or f"restored-{user.id}",
-                            'school': profile.school,
-                            'year_level': data.get('year_level') or '',
-                            'emergency_contact_name': data.get('emergency_contact_name') or '',
-                            'emergency_contact_phone': data.get('emergency_contact_phone') or '',
-                        })
-                        restored = True
-
-                elif item.item_type == 'user':
-                    username = data.get('username') or data.get('email')
-                    if username and not DjangoUser.objects.filter(username=username).exists():
-                        DjangoUser.objects.create(
-                            username=username,
-                            email=data.get('email', ''),
-                            first_name=data.get('first_name', ''),
-                            last_name=data.get('last_name', ''),
-                        )
-                        restored = True
-
-                item.restored_at = timezone.now()
-                item.save()
-            except Exception:
-                try:
-                    item.restored_at = timezone.now()
-                    item.save()
-                except Exception:
-                    pass
-
-        messages.success(request, f'{count} item(s) have been restored.')
-        return redirect('admin_panel:trash')
-    
-    return redirect('admin_panel:trash')
-
-
-@school_admin_required
-def delete_all_trash_permanent(request):
-    """Permanently delete all items from trash"""
-    profile = request.user.profile
-    
-    if request.method == 'POST':
-        trash_items = TrashLog.objects.filter(
-            school=profile.school,
-            is_permanently_deleted=False
-        )
-        count = trash_items.count()
-        
-        for item in trash_items:
-            item.is_permanently_deleted = True
-            item.save()
-        
-        messages.success(request, f'{count} item(s) have been permanently deleted.')
-        return redirect('admin_panel:trash')
-    
-    return redirect('admin_panel:trash')
 

@@ -436,6 +436,12 @@ class Survey(models.Model):
         ("closed", "Closed"),
     ]
 
+    RECIPIENT_CHOICES = [
+        ("students", "Students Only"),
+        ("owners", "Property Owners Only"),
+        ("both", "Both Students & Owners"),
+    ]
+
     EMAIL_VALIDATION_CHOICES = [
         ("none", "No Validation"),
         ("gmail", "Gmail Only"),
@@ -450,6 +456,12 @@ class Survey(models.Model):
         max_length=100, blank=True, default="Student Registration"
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    recipient_type = models.CharField(
+        max_length=20,
+        choices=RECIPIENT_CHOICES,
+        default="students",
+        help_text="Who should receive this survey"
+    )
     unique_code = models.CharField(
         max_length=50, unique=True, help_text="Unique code for survey link"
     )

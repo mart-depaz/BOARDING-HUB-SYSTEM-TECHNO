@@ -27,12 +27,6 @@ urlpatterns = [
     path('surveys/responses/<int:response_id>/delete/', views.delete_survey_response, name='delete_survey_response'),
     path('surveys/responses/<int:response_id>/restore/', views.restore_survey_response, name='restore_survey_response'),
     path('surveys/responses/<int:response_id>/permanent-delete/', views.permanently_delete_survey_response, name='permanently_delete_survey_response'),
-    # Trash Management
-    path('trash/', views.trash, name='trash'),
-    path('trash/restore/<int:item_id>/', views.restore_trash_item, name='restore_trash_item'),
-    path('trash/delete/<int:item_id>/', views.delete_trash_item_permanent, name='delete_trash_item_permanent'),
-    path('trash/restore-all/', views.restore_all_trash, name='restore_all_trash'),
-    path('trash/delete-all/', views.delete_all_trash_permanent, name='delete_all_trash_permanent'),
     path('surveys/<int:survey_id>/delete/', views.delete_survey, name='delete_survey'),
     path('students/<int:student_id>/delete/', views.delete_student, name='delete_student'),
 ]

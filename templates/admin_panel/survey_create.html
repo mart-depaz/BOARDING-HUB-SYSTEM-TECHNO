@@ -1,3 +1,7 @@
+<!-- 
+  NOTE: This template uses Django template variables in inline styles (e.g., style="color: {{ var }}")
+  This is intentional for dynamic styling. Linting warnings about template syntax are expected and safe to ignore.
+-->
 {% extends 'base.html' %}
 
 {% block title %}{% if survey %}Edit Survey{% else %}Create Survey{% endif %} - Boarding Hub{% endblock %}
@@ -302,6 +306,17 @@
                         <option value="active" {% if survey and survey.status == 'active' %}selected{% endif %}>Active (Ready to be published)</option>
                         <option value="closed" {% if survey and survey.status == 'closed' %}selected{% endif %}>Closed</option>
                     </select>
+                </div>
+
+                <!-- Recipient Type -->
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Send Survey To</label>
+                    <select name="recipient_type" id="survey-recipient-type" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <option value="students" {% if not survey or survey.recipient_type == 'students' %}selected{% endif %}>Students Only</option>
+                        <option value="owners" {% if survey and survey.recipient_type == 'owners' %}selected{% endif %}>Property Owners Only</option>
+                        <option value="both" {% if survey and survey.recipient_type == 'both' %}selected{% endif %}>Both Students & Owners</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Choose who will see and respond to this survey</p>
                 </div>
                 
                 <!-- Category -->

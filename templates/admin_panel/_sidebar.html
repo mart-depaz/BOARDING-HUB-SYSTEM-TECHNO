@@ -31,10 +31,6 @@
                 <i class="fas fa-clipboard-list w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
                 <span>Student Surveys</span>
             </a>
-            <a href="{% url 'admin_panel:trash' %}" class="w-full flex items-center p-3 rounded-xl transition-all duration-200 {% if request.resolver_match.url_name == 'trash' %}bg-indigo-700 text-white shadow-lg font-semibold{% else %}text-indigo-200 hover:bg-indigo-800 hover:text-white{% endif %}">
-                <i class="fas fa-trash-alt w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
-                <span>Trash</span>
-            </a>
         </nav>
     </div>
     

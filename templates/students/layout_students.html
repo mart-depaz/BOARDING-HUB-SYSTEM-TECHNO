@@ -1,5 +1,7 @@
 <!--
 library_system/templates/students/layout_students.html
+NOTE: This template contains Django template tags mixed with JavaScript.
+Linting warnings about template syntax in <script> blocks are expected and safe to ignore.
 -->
 
 <!DOCTYPE html>
@@ -108,6 +110,24 @@ library_system/templates/students/layout_students.html
                                 <div class="px-3 py-2 border-b border-white/10">
                                     <p id="profile-dropdown-name" class="text-sm font-semibold text-white">{{ user.get_full_name|default:user.username }}</p>
                                     <p class="text-xs text-text-muted">{{ user.email }}</p>
+                                    <!-- Show student's school in popover -->
+                                    <p class="text-xs text-neon-cyan mt-2 font-semibold">
+                                        {% if user.student_profile %}
+                                            {% if user.student_profile.school %}
+                                                {{ user.student_profile.school.name }}
+                                            {% elif user.profile.school %}
+                                                {{ user.profile.school.name }}
+                                            {% else %}
+                                                <span class="text-text-muted">No school assigned</span>
+                                            {% endif %}
+                                        {% else %}
+                                            {% if user.profile.school %}
+                                                {{ user.profile.school.name }}
+                                            {% else %}
+                                                <span class="text-text-muted">No school assigned</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </p>
                                 </div>
                                 <a href="{% url 'students:student_dashboard_section' 'profile' %}" class="block px-3 py-2 rounded-xl text-sm text-neon-cyan hover:bg-neon-cyan/10 transition">
                                     Profile Setup

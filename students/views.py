@@ -106,6 +106,34 @@ def student_dashboard(request, section="home"):
             }
         )
 
+    # Fetch surveys from ALL schools (so all students see all surveys)
+    from core.models import Survey
+    surveys = []
+    pending_surveys = 0
+    try:
+        student = request.user.student_profile
+        # Get ALL active surveys for students or both recipients
+        all_surveys = Survey.objects.filter(
+            status='active',
+            recipient_type__in=['students', 'both']  # Show surveys for students or both
+        ).order_by('-created_at')
+        
+        # Add a flag indicating if this survey is REQUIRED for this student
+        # (only required if the survey's school matches the student's school)
+        surveys = []
+        for survey in all_surveys:
+            is_required = survey.school == student.school if student.school else False
+            surveys.append({
+                'survey': survey,
+                'is_required': is_required,
+                'school_name': survey.school.name if survey.school else 'Unknown School'
+            })
+        
+        pending_surveys = len(surveys)
+    except Exception:
+        surveys = []
+        pending_surveys = 0
+
     # Build a public posts feed (includes others' posts and your own) - ordered by newest first (news feed algorithm)
     try:
         posts_qs = (
@@ -235,6 +263,8 @@ def student_dashboard(request, section="home"):
         "payment_stats": payment_stats,
         "payment_calendar": payment_calendar,
         "notifications_feed": notifications_feed,
+        "surveys": surveys,
+        "pending_surveys": pending_surveys,
     }
 
     return render(request, "students/owner_dashboard_students.html", context)
