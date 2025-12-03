@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Property Compliance Audits - Boarding Hub{% endblock %}
+
+{% block header_title %}Safety Management Panel{% endblock %}
+{% block current_view_title %}Property Compliance Audits{% endblock %}
+
+{% block sidebar %}
+{% include 'admin_panel/_sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+<header class="mb-8">
+    <h2 class="text-4xl font-bold text-gray-900">Property Compliance Audits</h2>
+    <p class="text-gray-500 mt-1">Detailed reports on registered boarding houses and their verification status.</p>
+</header>
+
+<div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="text-2xl font-semibold text-gray-800">Property Compliance Audits</h3>
+        <button class="bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-indigo-600 transition shadow-md">
+            + Schedule New Audit
+        </button>
+    </div>
+    <p class="text-sm text-gray-500 mb-4">Review the verification status and safety ratings for all registered properties.</p>
+    
+    <div class="overflow-x-auto">
+        {% if properties %}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property ID</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Safety Rating</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verification Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Audit</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for property in properties %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-indigo-700">{{ property.property_id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ property.address }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm {% if property.safety_rating < 3 %}text-red-500{% else %}text-green-500{% endif %} font-semibold">
+                        {{ property.safety_rating }}/5 
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= property.safety_rating|floatformat:0|add:"0" %}⭐{% else %}★{% endif %}
+                        {% endfor %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="status-pill {% if property.status == 'verified' %}bg-blue-100 text-blue-800 border border-blue-400{% else %}bg-red-100 text-red-800 border border-red-400{% endif %}">
+                            {{ property.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ property.verified_at|date:"M d, Y"|default:"Never" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <button class="text-indigo-600 hover:text-indigo-900 font-medium">View Report</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-10 text-gray-500">
+            No verified property records found.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

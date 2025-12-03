@@ -1,0 +1,68 @@
+﻿<!--
+templates/properties/partials/post_card_students.html
+-->
+
+
+{% load location_extras %}
+{% with data_source=post.source|default:post_source|default:'student' %}
+{% with server_flag=is_server|default:False %}
+<article class="glass-card rounded-2xl p-6 border border-white/10 relative" data-post-id="{{ post.id }}" data-likes="{{ post.likes }}" data-author-id="{{ post.author_id|default:request.user.id }}" data-source="{{ data_source }}" data-server="{{ server_flag|yesno:'true,false' }}" data-images="{{ post.images|to_json|escapejs }}">
+    <!-- Header: Avatar + Author + 3-dots menu -->
+    <div class="flex items-start justify-between mb-4">
+        <div class="flex items-start space-x-3 flex-1">
+            <!-- Avatar with Profile Picture -->
+            <div class="w-12 h-12 rounded-full bg-neon-cyan/20 border border-neon-cyan/60 flex-shrink-0 flex items-center justify-center text-neon-cyan font-bold text-sm overflow-hidden">
+                {% if post.author and post.author.profile.profile_picture %}
+                    <img src="{{ post.author.profile.profile_picture.url }}" alt="{{ post.author_full_name }}" class="w-full h-full object-cover">
+                {% else %}
+                    {{ post.author_full_name|default:post.author_name|default:request.user.get_full_name|default:request.user.username|slice:":1"|upper }}
+                {% endif %}
+            </div>
+            <!-- Author Info -->
+            <div class="flex-1">
+                <p class="text-white font-medium">{{ post.author_full_name|default:post.author_name|default:request.user.get_full_name|default:request.user.username }}</p>
+                {% if post.location %}
+                    <p class="text-sm text-text-muted mt-1">📍 {{ post.location|format_location }}</p>
+                {% endif %}
+                <p class="text-xs text-text-muted mt-1">{{ post.timestamp|date:"M d, Y" }} {{ post.timestamp|time:"H:i" }}</p>
+            </div>
+        </div>
+        {% if show_actions %}
+        <!-- 3-Dots Menu (Edit/Delete) -->
+        <div class="relative">
+            <button class="post-actions-btn text-white hover:text-neon-cyan text-2xl font-bold transition leading-none" data-post-id="{{ post.id }}" title="More options">⋮</button>
+            <div id="actions-menu-{{ post.id }}" class="hidden absolute right-0 top-8 glass-card rounded-xl border border-white/10 p-2 z-10 min-w-[120px] shadow-xl">
+                <button class="delete-post-btn block w-full text-left px-3 py-2 rounded-lg text-sm text-red-300 hover:bg-red-500/20" data-post-id="{{ post.id }}">Delete</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <!-- Message -->
+    <p class="text-text-muted mt-4 text-sm">{{ post.message }}</p>
+    <!-- Images Grid -->
+    {% if post.images %}
+    {% with image_count=post.images|length %}
+    <div class="post-media-grid grid mt-4 gap-3 {% if image_count == 1 %}grid-cols-1{% elif image_count == 2 %}grid-cols-2{% else %}grid-cols-2 lg:grid-cols-3{% endif %}">
+        {% for image in post.images %}
+        <img src="{{ image }}" alt="Post image" class="post-media cursor-zoom-in rounded-xl w-full h-40 object-cover border border-white/10" data-index="{{ forloop.counter0 }}" data-post-id="{{ post.id }}">
+        {% endfor %}
+    </div>
+    {% endwith %}
+    {% endif %}
+    <!-- Actions: Heart + Comments -->
+    {% with is_liked=post.liked|default_if_none:False %}
+    <div class="flex items-center justify-between mt-4 text-sm text-text-muted">
+        <button class="like-btn flex items-center space-x-2 {% if is_liked %}text-red-500{% else %}text-text-muted hover:text-red-500{% endif %}" data-post-id="{{ post.id }}" data-liked="{{ is_liked|yesno:'true,false' }}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="{% if is_liked %}currentColor{% else %}none{% endif %}" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <span class="like-count">{{ post.likes|default:0 }}</span>
+        </button>
+        <button class="comments-btn text-xs text-text-muted hover:text-neon-cyan transition" data-post-id="{{ post.id }}">
+            Comments ({{ post.comments|length|default:0 }})
+        </button>
+    </div>
+    {% endwith %}
+</article>
+{% endwith %}
+{% endwith %}

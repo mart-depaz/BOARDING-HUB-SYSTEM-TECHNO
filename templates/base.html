@@ -1,0 +1,707 @@
+<!--
+template: base.html
+description: Base template for Boarding Hub system with responsive design, sidebar, top navigation, notifications,
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Boarding Hub{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/static/css/mobile-sidebar.css">
+    <link rel="stylesheet" href="/static/css/mobile-nav.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #4f46e5 #1f2937;
+            overflow: hidden !important;
+            height: 100%;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+        .sidebar > div:first-child {
+            flex: 1;
+            min-height: 0;
+            overflow-y: hidden !important;
+            overflow-x: hidden !important;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar > div:first-child > nav {
+            flex: 1;
+            min-height: 0;
+            overflow-y: hidden !important;
+            overflow-x: hidden !important;
+        }
+        .sidebar:hover > div:first-child > nav {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+        .sidebar:not(:hover) > div:first-child > nav {
+            overflow-y: hidden !important;
+            overflow-x: hidden !important;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #4f46e5;
+            border-radius: 10px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background-color: #1f2937;
+        }
+        .active-nav-link {
+            background-color: #4f46e5;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            border: 1px solid #6366f1;
+            font-weight: 600;
+        }
+        .status-pill {
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            line-height: 1;
+            font-weight: 600;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .message-alert {
+            position: fixed !important;
+            top: 100px !important;
+            left: 50% !important;
+            transform: translateX(-50%) translateY(0) !important;
+            z-index: 9999999 !important;
+            min-width: 400px;
+            max-width: 90%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            font-weight: 500;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            opacity: 1;
+            animation: slideDown 0.3s ease-out;
+        }
+        .message-alert .close-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            border: none;
+            color: currentColor;
+            font-size: 1.25rem;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+        .message-alert .close-btn:hover {
+            opacity: 1;
+        }
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        .message-alert.fade-out {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+            pointer-events: none;
+        }
+        @media (max-width: 640px) {
+            .message-alert {
+                min-width: calc(100% - 2rem);
+                left: 1rem;
+                right: 1rem;
+                transform: translateX(0) translateY(0);
+            }
+            .message-alert.fade-out {
+                transform: translateX(0) translateY(-20px);
+            }
+            @keyframes slideDown {
+                from {
+                    transform: translateX(0) translateY(-100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0) translateY(0);
+                    opacity: 1;
+                }
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col" style="overflow-x: hidden;">
+    {% block body %}
+    <!-- Main Top Bar/Header -->
+    <header class="flex-shrink-0 border-b border-gray-200 bg-white shadow-lg sticky top-0 p-4 relative overflow-hidden" style="z-index: 9999;">
+        <!-- Gradient Orbs (Top Right Corner) - Behind everything -->
+        <div 
+            class="absolute top-0 right-0 w-64 h-64 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none" 
+            style="background: radial-gradient(circle at 25% 75%, rgba(255, 150, 150, 0.4) 0%, rgba(255, 200, 100, 0.3) 100%); transform: translate(30%, -30%); z-index: 0;"
+        ></div>
+        <div 
+            class="absolute top-0 right-0 w-56 h-56 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none" 
+            style="background: radial-gradient(circle at 75% 25%, rgba(150, 200, 255, 0.4) 0%, rgba(255, 100, 200, 0.3) 100%); transform: translate(20%, -20%); z-index: 0;"
+        ></div>
+        
+        <!-- Content Container - Above gradients -->
+        <div class="flex justify-between items-center max-w-full mx-auto relative" style="z-index: 10;">
+            <!-- Title & Mobile Toggle -->
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="mobile-nav-toggle md:hidden text-gray-600 hover:text-indigo-600 p-2 rounded-lg transition duration-200" aria-label="Open navigation">
+                    <i class="fas fa-bars w-6 h-6"></i>
+                </button>
+                <span class="text-lg font-semibold text-gray-600" id="current-view-title">BOARDING HUB SYSTEM</span>
+            </div>
+            <!-- Right Side: Actions (Notifications, Profile) -->
+            <div class="flex items-center space-x-4 relative" style="z-index: 20;">
+                <!-- Notifications Button -->
+                <div class="relative" style="z-index: 20;">
+                    <button id="notification-button" class="relative p-2 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-gray-100 transition duration-200" title="Notifications" style="z-index: 20; position: relative;">
+                        <i class="fas fa-bell w-6 h-6"></i>
+                        <span id="notification-dot" class="absolute top-1 right-1 block h-3 w-3 rounded-full ring-2 ring-white bg-red-500 hidden"></span>
+                    </button>
+                    
+                    <!-- Notifications Dropdown -->
+                    <div id="notification-dropdown" class="fixed w-80 bg-white rounded-xl shadow-xl hidden border border-gray-100 origin-top-right transform transition-all duration-150 ease-out scale-95 opacity-0" style="max-height: 400px; overflow-y: auto; z-index: 99999; display: none;">
+                        <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
+                            <button id="mark-all-read" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Mark all as read</button>
+                        </div>
+                        <div id="notification-list" class="py-2">
+                            <!-- Notifications will be dynamically inserted here -->
+                            <div class="px-4 py-8 text-center text-gray-500 text-sm">
+                                <i class="fas fa-bell-slash text-2xl mb-2 text-gray-300"></i>
+                                <p>No notifications</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Profile Dropdown -->
+                <div class="relative" style="z-index: 20;">
+                    <button id="profile-menu-button" class="flex items-center space-x-2 p-1 rounded-full text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-200 transition duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" title="User Menu" style="z-index: 20; position: relative;">
+                        <span id="user-avatar" class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-base">
+                            {% if user.is_authenticated %}{{ user.first_name.0|default:user.username.0|upper }}{% else %}G{% endif %}
+                        </span>
+                        <span class="hidden sm:inline font-semibold" id="user-display-short">
+                            {% if user.is_authenticated %}{{ user.first_name|default:"Admin" }}{% else %}Guest{% endif %}
+                        </span>
+                        <i class="fas fa-chevron-down w-4 h-4 ml-1"></i>
+                    </button>
+                    
+                    <!-- Dropdown Content -->
+                    <div id="profile-dropdown" class="fixed w-48 bg-white rounded-xl shadow-xl py-1 hidden border border-gray-100 origin-top-right transform transition-all duration-150 ease-out scale-95 opacity-0" style="z-index: 99999; display: none;">
+                        <div class="px-4 py-2 text-xs text-gray-500 truncate">
+                            Signed in as: <span id="dropdown-user-id" class="font-mono">{% if user.is_authenticated %}{{ user.username|truncatechars:15 }}{% else %}Guest{% endif %}</span>
+                        </div>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        {% if user.is_authenticated %}
+                            {% if user.profile.role == 'school_admin' %}
+                            <a href="{% url 'admin_panel:admin_profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-xl">
+                                Profile Settings
+                            </a>
+                            {% else %}
+                            <a href="#" data-view="settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-xl" id="profile-link-dropdown">
+                                Profile Settings
+                            </a>
+                            {% endif %}
+                        {% endif %}
+                        <a href="{% url 'accounts:logout' %}" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition duration-100 rounded-b-xl">
+                            Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile nav (global) - sidebar for cellphone only -->
+    <div id="mobile-nav-menu" class="mobile-nav-menu" aria-hidden="true">
+        <a href="{% url 'properties:owner_dashboard' %}" class="mobile-nav-item {% if section == 'home' %}active{% endif %}">
+            <i class="fas fa-home mr-3"></i> Home
+        </a>
+        <a href="{% url 'properties:owner_dashboard_section' 'my-home' %}" class="mobile-nav-item {% if section == 'my-home' %}active{% endif %}">
+            <i class="fas fa-building mr-3"></i> My Home
+        </a>
+        <a href="{% url 'properties:owner_dashboard_section' 'survey' %}" class="mobile-nav-item {% if section == 'survey' %}active{% endif %}">
+            <i class="fas fa-poll mr-3"></i> Survey
+        </a>
+        <a href="{% url 'properties:owner_dashboard_section' 'notifications' %}" class="mobile-nav-item md:hidden">
+            <i class="fas fa-bell mr-3"></i> Notifications
+        </a>
+    </div>
+    <div id="mobile-nav-overlay" class="mobile-nav-overlay" aria-hidden="true"></div>
+
+    <!-- Main Content Layout -->
+    <div class="flex flex-1" style="margin-left: 0; position: relative; z-index: 1;">
+        {% block sidebar %}{% endblock %}
+        
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto" style="padding: 1.5rem; margin-left: 0; height: calc(100vh - 80px); z-index: 1;">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message-alert p-4 pr-10 rounded-xl {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-800{% elif message.tags == 'success' %}bg-green-50 border-green-200 text-green-800{% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+                        <button class="close-btn" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 500);" aria-label="Close">&times;</button>
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 mr-3">
+                                {% if message.tags == 'error' %}
+                                    <i class="fas fa-exclamation-circle text-red-600 text-xl"></i>
+                                {% elif message.tags == 'success' %}
+                                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-semibold">{{ message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Back Button (only shown on pages with substantial content) -->
+            {% block back_button %}{% endblock %}
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% endblock %}
+    
+    <script>
+        // Notifications functionality
+        let notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+        const notificationButton = document.getElementById('notification-button');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+        const notificationList = document.getElementById('notification-list');
+        const notificationDot = document.getElementById('notification-dot');
+        const markAllReadButton = document.getElementById('mark-all-read');
+        
+        // Function to update notification count
+        function updateNotificationCount() {
+            const unreadCount = notifications.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                notificationDot.classList.remove('hidden');
+            } else {
+                notificationDot.classList.add('hidden');
+            }
+        }
+        
+        // Function to render notifications
+        function renderNotifications() {
+            if (notifications.length === 0) {
+                notificationList.innerHTML = `
+                    <div class="px-4 py-8 text-center text-gray-500 text-sm">
+                        <i class="fas fa-bell-slash text-2xl mb-2 text-gray-300"></i>
+                        <p>No notifications</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            notificationList.innerHTML = notifications.map((notif, index) => {
+                let iconColor = 'text-indigo-500';
+                if (notif.type === 'success') iconColor = 'text-green-500';
+                else if (notif.type === 'error') iconColor = 'text-red-500';
+                
+                return `
+                <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition duration-150 ${!notif.read ? 'bg-indigo-50' : ''}" data-index="${index}">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 mt-1">
+                            <i class="fas ${notif.icon || 'fa-info-circle'} ${iconColor}"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900">${notif.title}</p>
+                            <p class="text-xs text-gray-500 mt-1">${notif.message}</p>
+                            <p class="text-xs text-gray-400 mt-1">${formatTime(notif.timestamp)}</p>
+                        </div>
+                        ${!notif.read ? '<div class="flex-shrink-0 w-2 h-2 bg-indigo-500 rounded-full mt-2"></div>' : ''}
+                    </div>
+                </div>
+            `;
+            }).join('');
+            
+            // Add click handlers to mark as read
+            notificationList.querySelectorAll('[data-index]').forEach(item => {
+                item.addEventListener('click', () => {
+                    const index = parseInt(item.getAttribute('data-index'));
+                    notifications[index].read = true;
+                    localStorage.setItem('notifications', JSON.stringify(notifications));
+                    renderNotifications();
+                    updateNotificationCount();
+                });
+            });
+        }
+        
+        // Format timestamp
+        function formatTime(timestamp) {
+            const now = new Date();
+            const time = new Date(timestamp);
+            const diff = now - time;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            return time.toLocaleDateString();
+        }
+        
+        // Toggle notifications dropdown
+        if (notificationButton && notificationDropdown) {
+            notificationButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = notificationDropdown.classList.contains('hidden') || notificationDropdown.style.display === 'none';
+                
+                if (isHidden) {
+                    // Calculate position
+                    const rect = notificationButton.getBoundingClientRect();
+                    notificationDropdown.style.top = (rect.bottom + 8) + 'px';
+                    notificationDropdown.style.right = (window.innerWidth - rect.right) + 'px';
+                    notificationDropdown.style.display = 'block';
+                    notificationDropdown.classList.remove('hidden', 'scale-95', 'opacity-0');
+                    notificationDropdown.classList.add('scale-100', 'opacity-100');
+                } else {
+                    notificationDropdown.style.display = 'none';
+                    notificationDropdown.classList.add('hidden', 'scale-95', 'opacity-0');
+                    notificationDropdown.classList.remove('scale-100', 'opacity-100');
+                }
+                
+                // Close profile dropdown if open
+                if (profileDropdown && !profileDropdown.classList.contains('hidden') && profileDropdown.style.display !== 'none') {
+                    profileDropdown.style.display = 'none';
+                    profileDropdown.classList.add('hidden', 'scale-95', 'opacity-0');
+                    profileDropdown.classList.remove('scale-100', 'opacity-100');
+                }
+            });
+            
+            // Mark all as read
+            if (markAllReadButton) {
+                markAllReadButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    notifications.forEach(n => n.read = true);
+                    localStorage.setItem('notifications', JSON.stringify(notifications));
+                    renderNotifications();
+                    updateNotificationCount();
+                });
+            }
+            
+            // Handle clicks outside to close dropdown
+            document.addEventListener('click', (event) => {
+                if (!notificationButton.contains(event.target) && !notificationDropdown.contains(event.target)) {
+                    notificationDropdown.style.display = 'none';
+                    notificationDropdown.classList.add('hidden', 'scale-95', 'opacity-0');
+                    notificationDropdown.classList.remove('scale-100', 'opacity-100');
+                }
+            });
+        }
+        
+        // Initialize notifications
+        updateNotificationCount();
+        renderNotifications();
+        
+        // Listen for new notifications (can be triggered from other parts of the app)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'notifications') {
+                notifications = JSON.parse(e.newValue || '[]');
+                renderNotifications();
+                updateNotificationCount();
+            }
+        });
+        
+        // Function to add notification (can be called from anywhere)
+        window.addNotification = function(title, message, type = 'info', icon = null) {
+            const notification = {
+                id: Date.now(),
+                title: title,
+                message: message,
+                type: type,
+                icon: icon || (type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'),
+                timestamp: new Date().toISOString(),
+                read: false
+            };
+            notifications.unshift(notification);
+            // Keep only last 50 notifications
+            if (notifications.length > 50) {
+                notifications = notifications.slice(0, 50);
+            }
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+            renderNotifications();
+            updateNotificationCount();
+        };
+        
+        // Profile Dropdown Toggle
+        const profileMenuButton = document.getElementById('profile-menu-button');
+        const profileDropdown = document.getElementById('profile-dropdown');
+        
+        if (profileMenuButton && profileDropdown) {
+            profileMenuButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = profileDropdown.classList.contains('hidden') || profileDropdown.style.display === 'none';
+                
+                if (isHidden) {
+                    // Calculate position
+                    const rect = profileMenuButton.getBoundingClientRect();
+                    profileDropdown.style.top = (rect.bottom + 8) + 'px';
+                    profileDropdown.style.right = (window.innerWidth - rect.right) + 'px';
+                    profileDropdown.style.display = 'block';
+                    profileDropdown.classList.remove('hidden', 'scale-95', 'opacity-0');
+                    profileDropdown.classList.add('scale-100', 'opacity-100');
+                } else {
+                    profileDropdown.style.display = 'none';
+                    profileDropdown.classList.add('hidden', 'scale-95', 'opacity-0');
+                    profileDropdown.classList.remove('scale-100', 'opacity-100');
+                }
+                
+                // Close notifications dropdown if open
+                if (notificationDropdown && !notificationDropdown.classList.contains('hidden') && notificationDropdown.style.display !== 'none') {
+                    notificationDropdown.style.display = 'none';
+                    notificationDropdown.classList.add('hidden', 'scale-95', 'opacity-0');
+                    notificationDropdown.classList.remove('scale-100', 'opacity-100');
+                }
+            });
+            
+            // Handle clicks outside the dropdown to close it
+            document.addEventListener('click', (event) => {
+                if (!profileMenuButton.contains(event.target) && !profileDropdown.contains(event.target)) {
+                    profileDropdown.style.display = 'none';
+                    profileDropdown.classList.add('hidden', 'scale-95', 'opacity-0');
+                    profileDropdown.classList.remove('scale-100', 'opacity-100');
+                }
+            });
+        }
+        
+        // Mobile sidebar toggle with overlay
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        let sidebarOverlay = null;
+        
+        function createSidebarOverlay() {
+            if (sidebarOverlay) return sidebarOverlay;
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'sidebar-overlay';
+            overlay.id = 'sidebar-overlay';
+            document.body.appendChild(overlay);
+            
+            overlay.addEventListener('click', closeSidebar);
+            return overlay;
+        }
+        
+        function openSidebar() {
+            if (!sidebar) return;
+            sidebar.classList.add('open');
+            sidebar.classList.remove('-translate-x-full');
+            
+            // Create and show overlay
+            sidebarOverlay = createSidebarOverlay();
+            sidebarOverlay.classList.add('active');
+        }
+        
+        function closeSidebar() {
+            if (!sidebar) return;
+            sidebar.classList.remove('open');
+            sidebar.classList.add('-translate-x-full');
+            
+            // Hide overlay
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.remove('active');
+                sidebarOverlay.classList.add('hide');
+                setTimeout(() => {
+                    sidebarOverlay.classList.remove('hide');
+                }, 300);
+            }
+        }
+        
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // On small screens, the top-left button is used for the mobile nav sidebar.
+                // Prevent the desktop sidebar toggle from firing on small devices.
+                if (window.innerWidth < 768) return;
+
+                if (sidebar.classList.contains('open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+            
+            // Close sidebar when a navigation link is clicked
+            const navLinks = sidebar.querySelectorAll('a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    // Don't close if it's just toggling a section
+                    closeSidebar();
+                });
+            });
+            
+            // Close sidebar on window resize (when switching to desktop view)
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 1024) { // lg breakpoint
+                    closeSidebar();
+                    sidebar.classList.remove('-translate-x-full');
+                }
+            });
+        }
+        
+        // Sequential back navigation function
+        // Only uses history.back() if there's a previous page in the same origin
+        // Otherwise, navigates to the provided fallback URL
+        function goBackSequentially(fallbackUrl) {
+            // Check if there's a referrer from the same origin (same domain)
+            const referrer = document.referrer;
+            const currentOrigin = window.location.origin;
+            
+            // If referrer exists and is from the same origin, use sequential back
+            if (referrer && referrer.startsWith(currentOrigin)) {
+                // Check if history has more than just the current page
+                // Note: history.length might not be reliable, but we can try going back
+                window.history.back();
+            } else {
+                // No valid referrer or from different origin, use direct link
+                window.location.href = fallbackUrl;
+            }
+        }
+        
+        // Make function globally accessible
+        window.goBackSequentially = goBackSequentially;
+        
+        // Ensure sidebar is visible on large screens when loaded
+        window.addEventListener('load', () => {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar && window.innerWidth >= 1024) {
+                sidebar.classList.remove('-translate-x-full');
+            }
+            
+            // Auto-dismiss messages with duration based on text length
+            const messages = document.querySelectorAll('.message-alert');
+            messages.forEach((message) => {
+                // Get the message text
+                const messageText = message.querySelector('p.font-semibold')?.textContent || message.textContent || '';
+                const textLength = messageText.trim().length;
+                
+                // Calculate duration based on text length
+                // Base time: 3 seconds for very short messages
+                // Reading speed: ~200-250 words per minute = ~4 characters per second
+                // Add 0.5 seconds per 20 characters (comfortable reading pace)
+                let duration;
+                if (textLength <= 30) {
+                    duration = 3000; // 3 seconds for very short messages
+                } else if (textLength <= 60) {
+                    duration = 4000; // 4 seconds for short messages
+                } else if (textLength <= 100) {
+                    duration = 5000; // 5 seconds for medium messages
+                } else if (textLength <= 150) {
+                    duration = 6000; // 6 seconds for longer messages
+                } else {
+                    // For very long messages: base 6 seconds + 0.05 seconds per character over 150
+                    duration = 6000 + ((textLength - 150) * 50);
+                    // Cap at 15 seconds maximum
+                    duration = Math.min(duration, 15000);
+                }
+                
+                setTimeout(() => {
+                    if (!message.classList.contains('fade-out')) {
+                        message.classList.add('fade-out');
+                        setTimeout(() => {
+                            message.remove();
+                        }, 500); // Remove after fade animation completes
+                    }
+                }, duration);
+            });
+            
+            // Stack multiple messages vertically
+            if (messages.length > 1) {
+                messages.forEach((msg, index) => {
+                    if (index > 0) {
+                        msg.style.top = `${100 + (index * 80)}px`;
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script>
+        // Mobile nav global toggle (works across pages)
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileNavToggle = document.getElementById('mobile-nav-toggle') || document.getElementById('menu-toggle');
+            const mobileNavMenu = document.getElementById('mobile-nav-menu');
+            const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+
+            if (mobileNavToggle && mobileNavMenu && mobileNavOverlay) {
+                mobileNavToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    mobileNavMenu.classList.toggle('active');
+                    mobileNavOverlay.classList.toggle('active');
+                });
+
+                const navItems = mobileNavMenu.querySelectorAll('.mobile-nav-item');
+                navItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        mobileNavMenu.classList.add('hide');
+                        mobileNavOverlay.classList.add('hide');
+                        setTimeout(() => {
+                            mobileNavMenu.classList.remove('active', 'hide');
+                            mobileNavOverlay.classList.remove('active', 'hide');
+                        }, 300);
+                    });
+                });
+
+                mobileNavOverlay.addEventListener('click', () => {
+                    mobileNavMenu.classList.add('hide');
+                    mobileNavOverlay.classList.add('hide');
+                    setTimeout(() => {
+                        mobileNavMenu.classList.remove('active', 'hide');
+                        mobileNavOverlay.classList.remove('active', 'hide');
+                    }, 300);
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!mobileNavMenu.contains(e.target) && !mobileNavToggle.contains(e.target)) {
+                        mobileNavMenu.classList.remove('active');
+                        mobileNavOverlay.classList.remove('active');
+                    }
+                });
+
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth >= 768) {
+                        mobileNavMenu.classList.remove('active', 'hide');
+                        mobileNavOverlay.classList.remove('active', 'hide');
+                    }
+                });
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

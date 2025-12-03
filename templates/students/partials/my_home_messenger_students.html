@@ -1,0 +1,144 @@
+<!--
+templates/students/partials/my_home_messenger_students.html
+-->
+
+<div class="myhome-panel hidden" data-panel="messenger">
+    <!-- Messenger panel copied from owner partial for UI parity. The messenger functionality (conversations, messages) is preserved from the original. -->
+    <!-- This is a student-scoped copy; owner-only guards from the original remain (though students typically won't see/use them). -->
+    <div id="messengerApp" class="flex flex-1 overflow-hidden h-[calc(100vh-240px)] bg-gradient-to-br from-gray-900 via-gray-950 to-black">
+
+        <!-- 1. Left Panel: Chat List / Contacts -->
+        <div id="contactList" class="flex-col w-full lg:w-80 bg-gray-800/50 border-r border-gray-700 lg:flex overflow-hidden">
+            
+            <!-- Header/Search -->
+            <div class="p-4 border-b border-gray-700 flex flex-col flex-shrink-0">
+                <h1 class="text-2xl font-bold text-neon-cyan mb-3">Messages</h1>
+            </div>
+
+            <!-- Chat List -->
+            <div id="conversations-list" class="flex-1 overflow-y-auto custom-scroll">
+                <!-- Conversations will be rendered here -->
+                <div class="text-center p-8 text-gray-500 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-600/30 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    No conversations yet
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Right Panel: Conversation View -->
+        <div id="conversationView" class="flex flex-col flex-1 bg-gray-900/50 shadow-inner lg:flex hidden lg:flex">
+            
+            <!-- Conversation Header -->
+            <div class="flex items-center justify-between p-4 bg-gray-800/50 border-b border-gray-700 shadow-md z-10 flex-shrink-0">
+                <div class="flex items-center">
+                    <!-- Back button visible only on mobile (lg:hidden) -->
+                    <button class="lg:hidden text-gray-400 hover:text-white mr-3" onclick="showContactList()">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-neon-cyan/30 to-neon-purple/30 border border-neon-cyan/50 flex items-center justify-center flex-shrink-0">
+                        <span id="chat-avatar-initial" class="text-sm font-semibold text-neon-cyan">?</span>
+                    </div>
+                    <div class="ml-3">
+                        <p id="chat-recipient-name" class="font-semibold text-lg text-white">Select a chat</p>
+                        <p id="chat-recipient-status" class="text-sm text-green-500">Online</p>
+                    </div>
+                </div>
+                <button class="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-700 transition duration-150">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M18 12a6 6 0 11-12 0 6 6 0 0112 0z" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-center px-6 py-12">
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 border border-neon-cyan/30 flex items-center justify-center mb-4 animate-pulse">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-neon-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2">Select a conversation</h3>
+                <p class="text-sm text-gray-400 max-w-xs">Choose from your existing conversations or start a new one by clicking on a contact.</p>
+            </div>
+
+            <!-- Chat Area (Hidden until selected) -->
+            <div id="chat-area" class="hidden flex flex-col h-full">
+                
+                <!-- Messages Container -->
+                <div id="messages-container" class="flex-1 p-6 space-y-4 overflow-y-auto custom-scroll">
+                    <!-- Messages will be populated here -->
+                </div>
+                
+                <!-- Message Input Footer -->
+                <div class="p-4 bg-gray-800/50 border-t border-gray-700 flex items-center gap-3 flex-shrink-0">
+                    
+                    <!-- Attachment Button -->
+                    <button class="p-2 text-gray-400 hover:text-neon-cyan transition duration-150 rounded-full hover:bg-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a1.5 1.5 0 00-2.121-2.121l-9.9 9.9A4 4 0 003 20h18" />
+                        </svg>
+                    </button>
+
+                    <!-- Text Input -->
+                    <textarea 
+                        id="message-input" 
+                        placeholder="Type a message..." 
+                        class="flex-1 p-3 rounded-xl bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-neon-cyan transition duration-150 resize-none max-h-24" 
+                        rows="1"
+                        disabled
+                    ></textarea>
+
+                    <!-- Send Button -->
+                    <button 
+                        id="send-message-btn" 
+                        class="p-3 bg-neon-cyan text-gray-900 rounded-xl hover:bg-neon-cyan/90 transition duration-150 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+                        disabled
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <style>
+        /* Custom scrollbar styling for dark mode */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        /* Mobile View State Control */
+        @media (max-width: 1023px) {
+            #contactList {
+                display: flex;
+                flex-basis: 100%;
+                max-width: 100%;
+            }
+            #conversationView {
+                display: none;
+            }
+            .show-chat #contactList {
+                display: none;
+            }
+            .show-chat #conversationView {
+                display: flex !important;
+                flex-basis: 100%;
+                max-width: 100%;
+            }
+        }
+    </style>
+</div>

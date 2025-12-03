@@ -1,0 +1,37 @@
+<!--
+templates/students/partials/post_card_students_scripts.html
+-->
+
+
+<script>
+function toggleActionsMenu(postId) {
+    const menu = document.getElementById('actions-menu-' + postId);
+    if (menu) menu.classList.toggle('hidden');
+}
+
+document.querySelectorAll('.like-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const postId = btn.getAttribute('data-post-id');
+        const likeCountSpan = document.getElementById('like-count-' + postId);
+        let liked = btn.getAttribute('data-liked') === 'true';
+        let count = parseInt(likeCountSpan.textContent);
+        if (!liked) {
+            btn.classList.add('text-red-500');
+            btn.setAttribute('data-liked', 'true');
+            likeCountSpan.textContent = count + 1;
+        } else {
+            btn.classList.remove('text-red-500');
+            btn.setAttribute('data-liked', 'false');
+            likeCountSpan.textContent = count - 1;
+        }
+    });
+});
+
+document.querySelectorAll('.comments-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const postId = btn.getAttribute('data-post-id');
+        // Open comments modal or section (implement as needed)
+        alert('Open comments for post ' + postId);
+    });
+});
+</script>

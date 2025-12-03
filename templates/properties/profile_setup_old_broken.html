@@ -1,0 +1,398 @@
+{% extends 'properties/layout.html' %}
+
+{% block title %}Profile Setup - Property Owner Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .location-dropdown {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: white;
+        padding: 12px 16px;
+    }
+
+    .location-dropdown:focus {
+        outline: none;
+        border-color: #06b6d4;
+        box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+    }
+
+    .location-dropdown option {
+        background: #1e293b;
+        color: white;
+        padding: 8px;
+    }
+
+    .profile-picture-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .upload-button {
+        background: rgba(6, 182, 212, 0.2);
+        border: 1px solid #06b6d4;
+        color: #06b6d4;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .upload-button:hover {
+        background: rgba(6, 182, 212, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden p-4 sm:p-6 lg:p-8">
+    <!-- Background Effects -->
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%236366f1" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="1.5"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+
+    <div class="relative z-10 max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-4">
+                Profile Setup
+            </h1>
+            <p class="text-xl text-gray-300">
+                Configure your boarding house location and profile information
+            </p>
+        </div>
+
+        <!-- Profile Form -->
+        <div class="glass-card rounded-3xl p-8 border border-white/10">
+            <form method="post" enctype="multipart/form-data" class="space-y-8" id="profile-form">
+                {% csrf_token %}
+
+                <!-- Profile Picture Section -->
+                <div class="text-center space-y-4">
+                    <h2 class="text-2xl font-semibold text-white mb-4">Profile Picture</h2>
+
+                    <div class="flex flex-col items-center space-y-4">
+                        <div class="relative">
+                            {% if profile_picture_url %}
+                                <img src="{{ profile_picture_url }}" alt="Profile Picture" class="profile-picture-preview" id="profile-preview">
+                            {% else %}
+                                <div class="profile-picture-preview bg-gradient-to-br from-cyan-400/20 to-purple-400/20 border-2 border-cyan-400/30 flex items-center justify-center" id="profile-preview">
+                                    <svg class="w-12 h-12 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </svg>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <input type="file"
+                                   name="profile_picture"
+                                   id="profile_picture"
+                                   accept="image/*"
+                                   class="hidden">
+                            <label for="profile_picture" class="upload-button cursor-pointer">
+                                Choose Photo
+                            </label>
+                            <span class="text-sm text-gray-400">
+                                Max size: 5MB (JPG, PNG)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-semibold text-white mb-4">Contact Information</h2>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">
+                            Phone Number
+                        </label>
+                        <input type="tel"
+                               name="phone"
+                               id="phone_input"
+                               value="{{ profile.phone|default:'' }}"
+                               class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+                               placeholder="e.g., +63 912 345 6789">
+                    </div>
+                </div>
+
+                <!-- Boarding House Location -->
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-semibold text-white mb-4">Boarding House Location</h2>
+                    <p class="text-sm text-gray-400 mb-4">
+                        Set the location of your boarding house property. Only Caraga Region is currently supported.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Region -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Region <span class="text-red-400">*</span>
+                            </label>
+                            <select name="boarding_region"
+                                    id="boarding_region"
+                                    class="location-dropdown w-full"
+                                    required>
+                                <option value="">Select Region</option>
+                                <option value="Caraga (Region XIII)" {% if profile.boarding_region == "Caraga (Region XIII)" %}selected{% endif %}>
+                                    Caraga (Region XIII)
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Province -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Province
+                            </label>
+                            <select name="boarding_province"
+                                    id="boarding_province"
+                                    class="location-dropdown w-full">
+                                <option value="">Select Province</option>
+                            </select>
+                        </div>
+
+                        <!-- City/Municipality -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                City/Municipality
+                            </label>
+                            <select name="boarding_city"
+                                    id="boarding_city"
+                                    class="location-dropdown w-full">
+                                <option value="">Select City/Municipality</option>
+                            </select>
+                        </div>
+
+                        <!-- Barangay -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Barangay
+                            </label>
+                            <select name="boarding_barangay"
+                                    id="boarding_barangay"
+                                    class="location-dropdown w-full">
+                                <option value="">Select Barangay</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Address -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">
+                            Complete Address
+                        </label>
+                        <textarea name="boarding_address"
+                                  rows="3"
+                                  class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+                                  placeholder="e.g., Block 5 Lot 12, Green Valley Subdivision, Near SM City...">{{ profile.boarding_address|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end space-x-4 pt-6">
+                    <a href="{% url 'properties:owner_dashboard' %}"
+                       class="px-6 py-3 rounded-xl border border-white/20 text-white font-medium hover:bg-white/10 transition">
+                        Cancel
+                    </a>
+                    <button type="submit"
+                            id="save-profile-btn"
+                            class="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-blue-700 transition">
+                        Save Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Location data for Caraga Region only
+const locationData = {
+    "Caraga (Region XIII)": {
+        "Agusan del Norte": {
+            "Butuan City": ["Anticala", "Baan", "Bancasi", "Banza", "Baranggay 1", "Baranggay 2", "Baranggay 3", "Bit-os", "Bonbon", "Buhangin", "Camayahan", "Dagohoy", "Dumalagan", "Florida", "Golden Ribbon", "Holy Redeemer", "Humabon", "Imadejas", "Kinamlutan", "Lapu-lapu", "Libertad", "Limaha", "Los Angeles", "Mahogany", "Maon", "Masao", "New Society Village", "Pangabugan", "Port Puyod", "San Ignacio", "San Mateo", "Santiago", "Sikatuna", "Sumile", "Taguibo", "Tiniwisan", "Villa Kananga"],
+            "Nasipit": ["Cahayagan", "Taguibo", "Poblacion", "Camagong", "Cantugas", "Dayawan", "San Roque", "Tagbuyawan"],
+            "Las Nieves": ["Poblacion", "San Roque", "Santo Rosario", "Ambago", "Anislagan", "Aurora", "Golden Valley", "Magkalungay", "San Jose", "San Vicente", "Tagbuyawan"],
+            "Magallanes": ["Poblacion", "Tagbuyawan", "Magsaysay", "Anislagan", "Bunawan", "Doña Flavia", "San Isidro", "San Jose", "Tagbina", "Upper Olave"],
+            "Santiago": ["Poblacion", "Mabuhay", "San Antonio", "Santa Ana", "Tagbubunga", "Tagbina", "Upper Olave"],
+            "Tubay": ["Poblacion", "Tag-olo", "San Vicente", "San Roque", "Tagbina"],
+            "Carmen": ["Poblacion", "Cahayag", "Gosoon", "Tagbuyawan", "Upper Olave"],
+            "Jabonga": ["Poblacion", "Caasinan", "Magkalungay", "San Vicente", "Tagbina"],
+            "Kitcharao": ["Poblacion", "Anahawan", "Hinimbangan", "Magsaysay", "San Isidro"],
+            "Remedios T. Romualdez": ["Poblacion", "Cagdianao", "Dayawan", "Magsaysay", "Tagbina"],
+            "Buenavista": ["Poblacion", "Liberty", "Mahaba", "San Roque", "Tagbina"]
+        },
+        "Agusan del Sur": {
+            "Prosperidad": ["Poblacion", "San Teodoro", "Villa Mercedes", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "San Francisco": ["Poblacion", "Alegria", "Ebro", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "Trento": ["Poblacion", "Mat-i", "Mahagsay", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "Bunawan": ["Poblacion", "Consuelo", "Libertad", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "Bayugan City": ["Poblacion 1", "Poblacion 2", "Poblacion 3", "Poblacion 4", "Poblacion 5", "Poblacion 6", "Poblacion 7", "Poblacion 8", "Poblacion 9", "Poblacion 10", "Anahaw", "Aurora", "Bobonawan", "Bucac", "Bugac", "Joy", "Katipunan", "Maygatasan", "Monteclaro", "Sagua", "Santo Rosario", "Taglatawan", "Titik", "Villa Undayon", "Wawa"],
+            "Esperanza": ["Poblacion", "Bayugan", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "La Paz": ["Poblacion", "Bayugan", "Esperanza", "Gomez", "Kasapa", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "Loreto": ["Poblacion", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "Rosario": ["Poblacion", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "San Luis": ["Poblacion", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "Santa Josefa": ["Poblacion", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "Sibagat": ["Poblacion", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "Talacogon": ["Poblacion", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"],
+            "Veruela": ["Poblacion", "Bayugan", "Esperanza", "Gomez", "Kasapa", "La Paz", "Libertad", "Mahagsay", "San Agustin", "San Andres", "San Antonio", "San Jose", "San Roque", "Santa Ana", "Villa Aurora"]
+        },
+        "Surigao del Norte": {
+            "Surigao City": ["Canlanipa", "Ipil", "Mabua", "Poblacion 1", "Poblacion 2", "Poblacion 3", "Poblacion 4", "Poblacion 5", "Poblacion 6", "Poblacion 7", "Poblacion 8", "Alang-alang", "Anomar", "Buenavista", "Cabongbongan", "Capalawan", "Danawan", "Lipata", "Lisondra", "Luna", "Mapawa", "Orok", "Poctoy", "Punta Bilar", "San Juan", "San Roque", "Serna", "Songkoy", "Taft", "Togbongon", "Trinidad", "Washington"],
+            "Alegria": ["Poblacion", "Budlingin", "Magsaysay", "Alang-alang", "Anomar", "Buenavista", "Cabongbongan", "Capalawan", "Danawan", "Lipata", "Lisondra", "Luna", "Mapawa", "Orok", "Poctoy", "Punta Bilar", "San Juan", "San Roque", "Serna", "Songkoy", "Taft", "Togbongon", "Trinidad", "Washington"],
+            "Placer": ["Poblacion", "Esperanza", "Ipil", "Alang-alang", "Anomar", "Buenavista", "Cabongbongan", "Capalawan", "Danawan", "Lipata", "Lisondra", "Luna", "Mapawa", "Orok", "Poctoy", "Punta Bilar", "San Juan", "San Roque", "Serna", "Songkoy", "Taft", "Togbongon", "Trinidad", "Washington"],
+            "Dapa": ["Poblacion", "Caub", "San Isidro", "Alang-alang", "Anomar", "Buenavista", "Cabongbongan", "Capalawan", "Danawan", "Lipata", "Lisondra", "Luna", "Mapawa", "Orok", "Poctoy", "Punta Bilar", "San Juan", "San Roque", "Serna", "Songkoy", "Taft", "Togbongon", "Trinidad", "Washington"],
+            "General Luna": ["Poblacion", "Catangnan", "Doot", "San Isidro", "Union"],
+            "Pilar": ["Poblacion", "Esperanza", "San Roque"],
+            "San Benito": ["Poblacion", "Hanagdong", "Lahi"],
+            "San Francisco": ["Poblacion", "Anomar", "Capalawan"],
+            "San Isidro": ["Poblacion", "Danhawan", "Esperanza"],
+            "Santa Monica": ["Poblacion", "Buenavista", "Hanagdong"],
+            "Sison": ["Poblacion", "Anomar", "Capalawan"],
+            "Socorro": ["Poblacion", "Navarro", "Rizal"],
+            "Tagana-an": ["Poblacion", "Urbiztondo", "San Roque"],
+            "Tubod": ["Poblacion", "Anomar", "Capalawan"]
+        },
+        "Surigao del Sur": {
+            "Tandag City": ["Poblacion", "Bongtud", "Telaje", "Awasian", "Buenavista", "Dagocdoc", "Libas", "Mabua", "Pandanon", "San Agustin I", "San Agustin II", "San Antonio", "San Isidro", "San Roque", "Sindaton", "Telaje"],
+            "Bislig City": ["Poblacion", "Mangagoy", "San Fernando", "San Vicente", "Adlay", "Coleto", "Fortaliza", "Lawigan", "Pamaypayan", "San Isidro", "Sibaroy", "Tabon", "Villa Paz"],
+            "Adlay": ["Poblacion", "Kasapa1an", "Upper Ulian", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Bayabas": ["Poblacion", "Mahayahay", "New Tubigon", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Cagwait": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Cantilan": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Carmen": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Carrascal": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Cortes": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Hinatuan": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Lanuza": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "San Roque", "Sindangan"],
+            "Lianga": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Lingig": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Madrid": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Marihatag": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "San Agustin": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "San Miguel": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Tagbina": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"],
+            "Tago": ["Poblacion", "Amaga", "Daku", "Kahayag", "Kapatagan", "Lanuza", "San Roque", "Sindangan"]
+        },
+        "Dinagat Islands": {
+            "San Jose": ["Poblacion", "Santa Cruz", "Aurelio", "Boa", "Don Ruben E. Ecleo Sr.", "Justiniana Edera", "Lake Bababu", "Mabini", "San Juan", "San Pedro", "Santa Rita", "Villa San Antonio"],
+            "Basilisa": ["Poblacion", "Santa Rita", "Benglen", "Boa", "Don Ruben E. Ecleo Sr.", "Justiniana Edera", "Lake Bababu", "Mabini", "San Juan", "San Pedro", "Santa Cruz", "Villa San Antonio"],
+            "Cagdianao": ["Poblacion", "Villa Real", "New Mainit", "Boa", "Don Ruben E. Ecleo Sr.", "Justiniana Edera", "Lake Bababu", "Mabini", "San Juan", "San Pedro", "Santa Cruz", "Santa Rita", "Villa San Antonio"],
+            "Dinagat": ["Poblacion", "San Juan", "Ecija", "Boa", "Don Ruben E. Ecleo Sr.", "Justiniana Edera", "Lake Bababu", "Mabini", "San Pedro", "Santa Cruz", "Santa Rita", "Villa San Antonio"],
+            "Libjo": ["Poblacion", "Boa", "Don Ruben E. Ecleo Sr.", "Justiniana Edera", "Lake Bababu", "Mabini", "San Juan", "San Pedro", "Santa Cruz", "Santa Rita", "Villa San Antonio"],
+            "Loreto": ["Poblacion", "Boa", "Don Ruben E. Ecleo Sr.", "Justiniana Edera", "Lake Bababu", "Mabini", "San Juan", "San Pedro", "Santa Cruz", "Santa Rita", "Villa San Antonio"],
+            "Tubajon": ["Poblacion", "Boa", "Don Ruben E. Ecleo Sr.", "Justiniana Edera", "Lake Bababu", "Mabini", "San Juan", "San Pedro", "Santa Cruz", "Santa Rita", "Villa San Antonio"]
+        }
+    }
+};
+
+// Profile picture preview - wrapped in DOMContentLoaded to ensure elements exist
+document.addEventListener('DOMContentLoaded', function() {
+    const profilePictureInput = document.getElementById('profile_picture');
+    const profilePreview = document.getElementById('profile-preview');
+
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    e.target.value = '';
+                    return;
+                }
+
+                // Validate file type
+                if (!file.type.match('image.*')) {
+                    alert('Please select an image file');
+                    e.target.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (profilePreview) {
+                        profilePreview.innerHTML = `<img src="${e.target.result}" alt="Profile Preview" class="profile-picture-preview">`;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Location dropdowns
+    const regionSelect = document.getElementById('boarding_region');
+    const provinceSelect = document.getElementById('boarding_province');
+    const citySelect = document.getElementById('boarding_city');
+    const barangaySelect = document.getElementById('boarding_barangay');
+
+    // Current values
+    const currentProvince = "{{ profile.boarding_province|default:'' }}";
+    const currentCity = "{{ profile.boarding_city|default:'' }}";
+    const currentBarangay = "{{ profile.boarding_barangay|default:'' }}";
+
+    // Populate provinces when region changes
+    if (regionSelect) {
+        regionSelect.addEventListener('change', function() {
+            const selectedRegion = this.value;
+            populateProvinces(selectedRegion);
+            clearSelections(['city', 'barangay']);
+        });
+    }
+
+    if (provinceSelect) {
+        provinceSelect.addEventListener('change', function() {
+            const selectedRegion = regionSelect.value;
+            const selectedProvince = this.value;
+            populateCities(selectedRegion, selectedProvince);
+            clearSelections(['barangay']);
+        });
+    }
+
+    if (citySelect) {
+        citySelect.addEventListener('change', function() {
+            const selectedRegion = regionSelect.value;
+            const selectedProvince = provinceSelect.value;
+            const selectedCity = this.value;
+            populateBarangays(selectedRegion, selectedProvince, selectedCity);
+        });
+    }
+
+    function populateProvinces(region) {
+        if (!provinceSelect) return;
+        provinceSelect.innerHTML = '<option value="">Select Province</option>';
+        if (region && locationData[region]) {
+            Object.keys(locationData[region]).forEach(province => {
+                const option = document.createElement('option');
+                option.value = province;
+                option.textContent = province;
+                if (province === currentProvince) option.selected = true;
+                provinceSelect.appendChild(option);
+            });
+        }
+    }
+
+    function populateCities(region, province) {
+        if (!citySelect) return;
+        citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+        if (region && province && locationData[region] && locationData[region][province]) {
+            Object.keys(locationData[region][province]).forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                if (city === currentCity) option.selected = true;
+                citySelect.appendChild(option);
+            });
+        }
+    }
+
+    function populateBarangays(region, province, city) {
+        if (!barangaySelect) return;
+        barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+        if (region && province && city && locationData[region] && locationData[region][province] && locationData[region][province][city]) {
+            locationData[region][province][city

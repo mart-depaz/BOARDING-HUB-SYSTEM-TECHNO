@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Student from Survey - Boarding Hub{% endblock %}
+
+{% block header_title %}Safety Management Panel{% endblock %}
+{% block current_view_title %}Register Student{% endblock %}
+
+{% block sidebar %}
+{% include 'admin_panel/_sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+<header class="mb-8">
+    <h2 class="text-4xl font-bold text-gray-900">Register Student from Survey</h2>
+    <p class="text-gray-500 mt-1">Create student account with 8-character password from approved survey response.</p>
+</header>
+
+<div class="bg-white p-6 rounded-2xl shadow-lg mb-6">
+    <h3 class="text-2xl font-bold text-gray-900 mb-4">Student Information</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Name</p>
+            <p class="font-semibold text-gray-900">{{ response.student_name }}</p>
+        </div>
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Email</p>
+            <p class="font-semibold text-gray-900">{{ response.student_email }}</p>
+        </div>
+        {% if response.provided_student_id %}
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Student ID</p>
+            <p class="font-semibold text-gray-900">{{ response.provided_student_id }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<form method="post" class="bg-white p-6 rounded-2xl shadow-lg">
+    {% csrf_token %}
+    <p class="text-gray-700 mb-4">Click the button below to register this student. An 8-character password will be generated and sent to their email (if a new account is created). You may assign a Department and Program below.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <select name="department" id="department-select" class="w-full p-3 border border-gray-300 rounded-xl">
+                <option value="">-- Select Department --</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if response.additional_data.department_id == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Program</label>
+            <select name="program" id="program-select" class="w-full p-3 border border-gray-300 rounded-xl">
+                <option value="">-- Select Program --</option>
+                {% for prog in programs %}
+                <option value="{{ prog.id }}" data-department="{{ prog.department.id }}" {% if response.additional_data.program_id == prog.id|stringformat:"s" %}selected{% endif %}>{{ prog.name }} ({{ prog.department.name }})</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="flex space-x-4">
+        <a href="{% url 'admin_panel:survey_response_detail' response.id %}" class="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition">
+            Cancel
+        </a>
+        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition">
+            <i class="fas fa-user-plus mr-2"></i>Register Student
+        </button>
+    </div>
+</form>
+<script>
+    // Make program select options depend on selected department
+    (function(){
+        const deptSelect = document.getElementById('department-select');
+        const progSelect = document.getElementById('program-select');
+
+        function updatePrograms() {
+            const deptVal = deptSelect.value;
+            let anyVisible = false;
+            Array.from(progSelect.options).forEach(opt => {
+                const optDept = opt.getAttribute('data-department');
+                if (!optDept) {
+                    // keep placeholder
+                    return;
+                }
+                if (!deptVal || optDept === deptVal) {
+                    opt.style.display = '';
+                    anyVisible = true;
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+
+            // If no department selected, keep program disabled
+            progSelect.disabled = !deptVal || !anyVisible;
+            if (!deptVal) {
+                progSelect.value = '';
+            } else {
+                // If selected program is hidden, clear selection
+                const selected = progSelect.options[progSelect.selectedIndex];
+                if (selected && selected.style.display === 'none') {
+                    progSelect.value = '';
+                }
+            }
+        }
+
+        if (deptSelect && progSelect) {
+            deptSelect.addEventListener('change', updatePrograms);
+            // initialize on load
+            updatePrograms();
+        }
+    })();
+</script>
+{% endblock %}
+

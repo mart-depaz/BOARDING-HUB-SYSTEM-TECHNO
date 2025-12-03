@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block title %}Preview: {{ survey.title }} - Boarding Hub{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    .survey-container {
+        max-width: 800px;
+        margin: 2rem auto;
+    }
+    .preview-banner {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 1rem;
+        text-align: center;
+        font-weight: 600;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="survey-container">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="preview-banner">
+            <i class="fas fa-eye mr-2"></i> Preview Mode - This is how students will see the survey
+        </div>
+        
+        <div class="p-8">
+            <header class="mb-8 text-center">
+                <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ survey.title }}</h1>
+                <p class="text-gray-600">{{ survey.description }}</p>
+            </header>
+            
+            <form id="preview-form" class="space-y-8">
+                <!-- Student Basic Information -->
+                <div class="bg-indigo-50 p-6 rounded-xl border-2 border-indigo-200">
+                    <h2 class="text-2xl font-bold text-indigo-900 mb-4">Your Information</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+                                <input type="text" name="student_name" required
+                                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                       placeholder="Enter your full name">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Student ID <span class="text-red-500">*</span></label>
+                                <input type="text" name="student_id" required
+                                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                       placeholder="S-12345">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">University Email <span class="text-red-500">*</span></label>
+                                <input type="email" name="student_email" required
+                                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                       placeholder="use your university email (e.g., name@university.edu)">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                            <select name="department" id="department-select" class="w-full p-3 border border-gray-300 rounded-xl">
+                                <option value="">-- Select Department --</option>
+                                {% if departments %}
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Program</label>
+                            <select name="program" id="program-select" class="w-full p-3 border border-gray-300 rounded-xl">
+                                <option value="">-- Select Program --</option>
+                                {% if programs %}
+                                    {% for prog in programs %}
+                                    <option value="{{ prog.id }}" data-department="{{ prog.department.id }}">{{ prog.name }} ({{ prog.department.name }})</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Property Information (if required) -->
+                {% if survey.require_property_info %}
+                <div class="bg-yellow-50 p-6 rounded-xl border-2 border-yellow-200">
+                    <h2 class="text-2xl font-bold text-yellow-900 mb-4">Property Information</h2>
+                    <p class="text-sm text-gray-600 mb-4">Please provide information about the property you are renting.</p>
+                    
+                    <div class="space-y-4">
+                        <!-- Property ID removed per request -->
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Name Of Property <span class="text-red-500">*</span></label>
+                            <input type="text" name="property_name" required
+                                   class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="e.g., Sunrise Dormitory">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Owner Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="property_owner_name" required
+                                   class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="Owner Full Name">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Owner Contact Number</label>
+                            <input type="tel" name="property_owner_phone"
+                                   class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="+1234567890">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Owner Email</label>
+                            <input type="email" name="property_owner_email" required
+                                   class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="owner@example.com">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Address of Property</label>
+                            <input type="text" name="property_address"
+                                   class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="123 Main St, City, State">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Survey Questions -->
+                {% for section in sections %}
+                <div class="bg-white p-6 rounded-xl border-2 border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">{{ section.title }}</h2>
+                    
+                    <div class="space-y-6">
+                        {% for question in section.questions.all %}
+                        <div class="question-item">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ question.text }}
+                                {% if question.is_required %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            
+                            {% if question.question_type == 'text_short' %}
+                                <input type="text" name="question_{{ question.id }}" {% if question.is_required %}required{% endif %}
+                                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                       placeholder="Enter your answer">
+                            
+                            {% elif question.question_type == 'text_long' %}
+                                <textarea name="question_{{ question.id }}" rows="4" {% if question.is_required %}required{% endif %}
+                                          class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500"
+                                          placeholder="Enter your answer"></textarea>
+                            
+                            {% elif question.question_type == 'multiple_choice' %}
+                                <div class="space-y-2">
+                                    {% for option in question.options %}
+                                    <label class="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-indigo-50 cursor-pointer">
+                                        <input type="radio" name="question_{{ question.id }}" value="{{ option }}" {% if question.is_required %}required{% endif %}
+                                               class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                        <span class="ml-3 text-gray-700">{{ option }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            
+                            {% elif question.question_type == 'checkbox' %}
+                                <div class="space-y-2">
+                                    {% for option in question.options %}
+                                    <label class="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-indigo-50 cursor-pointer">
+                                        <input type="checkbox" name="question_{{ question.id }}" value="{{ option }}"
+                                               class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                        <span class="ml-3 text-gray-700">{{ option }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            
+                            {% elif question.question_type == 'rating' %}
+                                <div class="flex space-x-2">
+                                    {% for i in "12345" %}
+                                    <label class="flex items-center justify-center w-12 h-12 border-2 border-gray-300 rounded-lg hover:bg-yellow-50 cursor-pointer rating-star" data-rating="{{ i }}">
+                                        <input type="radio" name="question_{{ question.id }}" value="{{ i }}" {% if question.is_required %}required{% endif %}
+                                               class="sr-only">
+                                        <span class="text-2xl">⭐</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            
+                            {% elif question.question_type == 'date' %}
+                                <input type="date" name="question_{{ question.id }}" {% if question.is_required %}required{% endif %}
+                                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500">
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="flex justify-end space-x-4 pt-6 border-t">
+                    <a href="{% url 'admin_panel:survey_detail' survey.id %}" class="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Survey
+                    </a>
+                    <button type="button" onclick="alert('This is a preview mode. No data will be saved. This is how students will see the survey.')" class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition shadow-lg text-lg">
+                        <i class="fas fa-eye mr-2"></i>Preview Only (No Submission)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Rating stars interaction
+document.querySelectorAll('.rating-star').forEach(star => {
+    star.addEventListener('click', function() {
+        const rating = this.dataset.rating;
+        const questionItem = this.closest('.question-item');
+        const stars = questionItem.querySelectorAll('.rating-star');
+        
+        stars.forEach((s, index) => {
+            if (index < parseInt(rating)) {
+                s.classList.add('bg-yellow-50', 'border-yellow-400');
+            } else {
+                s.classList.remove('bg-yellow-50', 'border-yellow-400');
+            }
+        });
+        
+        // Set the radio button
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = true;
+        }
+    });
+});
+
+// Prevent form submission
+document.getElementById('preview-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('This is a preview mode. No data will be saved. This is how students will see the survey.');
+});
+
+// Department -> Program linking for preview
+(function(){
+    const deptSelect = document.getElementById('department-select');
+    const progSelect = document.getElementById('program-select');
+    if (!deptSelect || !progSelect) return;
+    function updatePrograms() {
+        const deptVal = deptSelect.value;
+        Array.from(progSelect.options).forEach(opt => {
+            const optDept = opt.getAttribute('data-department');
+            if (!optDept) return;
+            opt.style.display = (!deptVal || optDept === deptVal) ? '' : 'none';
+        });
+        progSelect.disabled = !deptVal;
+        if (!deptVal) progSelect.value = '';
+    }
+    deptSelect.addEventListener('change', updatePrograms);
+    updatePrograms();
+})();
+</script>
+{% endblock %}
+

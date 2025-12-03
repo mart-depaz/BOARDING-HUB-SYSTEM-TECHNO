@@ -1,0 +1,460 @@
+<!--
+library_system/templates/properties/layout.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Owner Control Deck - Boarding Hub System{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/mobile-nav.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #03050B; color: #E5E7EB; }
+        .primary-gradient { background: linear-gradient(90deg, #00FF9D, #00C9FF, #FF00FF, #FF7B00); }
+        .glass-card { background: rgba(5, 7, 14, 0.92); border: 1px solid rgba(148,163,184,0.18); box-shadow: 0 25px 60px rgba(0,0,0,0.7); }
+        .nav-pill { border-radius: 999px; padding: 0.45rem 1.25rem; font-weight: 600; transition: all 0.2s; }
+        .nav-pill-active { background: rgba(255,255,255,0.12); color: #fff; }
+        .nav-pill-inactive { color: rgba(255,255,255,0.55); }
+        .myhome-pill { border-radius: 999px; transition: all 0.25s ease; width: 100%; text-align: left; }
+        .myhome-pill-active { background: linear-gradient(135deg, rgba(0,255,255,0.2), rgba(0,255,157,0.15)); color: #00FFFF; border: 1px solid rgba(0,255,255,0.4); }
+        .myhome-pill-inactive { background: transparent; color: rgba(255,255,255,0.5); border: 1px solid transparent; }
+        .myhome-pill-inactive:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05); }
+        .toast-enter { animation: toast-slide-in 0.35s ease-out forwards; }
+        .toast-exit { animation: toast-slide-out 0.3s ease-in forwards; }
+        @keyframes toast-slide-in { from { opacity: 0; transform: translateY(-10px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes toast-slide-out { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-6px) scale(0.95); } }
+        /* Ensure desktop nav pills are hidden on small screens; keep them in the sidebar/mobile nav */
+        @media (max-width: 767px) {
+            .nav-items-desktop { display: none !important; }
+        }
+        /* ================================================================
+           SELECT DROPDOWN STYLING - Make options visible
+           ================================================================ */
+        select {
+            color-scheme: dark;
+            background-color: rgba(5, 7, 14, 1) !important;
+            color: #fff !important;
+        }
+        select option {
+            background-color: #0d1117 !important;
+            color: #fff !important;
+            padding: 0.5rem;
+        }
+        select option:hover,
+        select option:focus {
+            background-color: #00FFFF !important;
+            color: #000 !important;
+        }
+        select option:checked {
+            background: linear-gradient(#00FFFF, #00FFFF) !important;
+            background-color: #00FFFF !important;
+            color: #000 !important;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#0D1117',
+                        'neon-cyan': '#00FFFF',
+                        'neon-pink': '#FF00FF',
+                        'neon-orange': '#FF7B00',
+                        'neon-green': '#00FF9D',
+                        'text-muted': '#9CA3AF',
+                    },
+                }
+            }
+        }
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen">
+    <div id="toast-stack" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] space-y-3 max-w-[90vw] w-full sm:w-auto pointer-events-none px-4"></div>
+
+    <nav class="fixed top-0 left-0 right-0 z-40 bg-primary-dark/95 border-b border-neon-cyan/40 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="nav-header flex items-center space-x-6 flex-1">
+                    <span class="text-xl md:text-2xl font-black text-white tracking-[0.25em]">BOARDING HUB SYSTEM</span>
+                    
+                    <!-- Mobile Toggle Button -->
+                    <button id="mobile-nav-toggle" class="mobile-nav-toggle md:hidden" aria-label="Toggle navigation menu" title="Menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+
+                    <!-- Desktop Navigation Items -->
+                    <div class="nav-items-desktop hidden md:flex items-center space-x-2">
+                        {% if user.is_authenticated and user.profile.role == 'property_owner' %}
+                        <a href="{% url 'properties:owner_dashboard' %}" class="nav-pill {% if section == 'home' %}nav-pill-active{% else %}nav-pill-inactive{% endif %}">Home</a>
+                        <a href="{% url 'properties:owner_dashboard_section' 'my-home' %}" class="nav-pill {% if section == 'my-home' %}nav-pill-active{% else %}nav-pill-inactive{% endif %}">My Home</a>
+                        <a href="{% url 'properties:owner_dashboard_section' 'survey' %}" class="nav-pill {% if section == 'survey' %}nav-pill-active{% else %}nav-pill-inactive{% endif %}">Survey</a>
+                        {% else %}
+                        <a href="{% url 'students:dashboard' %}" class="nav-pill {% if section == 'home' %}nav-pill-active{% else %}nav-pill-inactive{% endif %}">Home</a>
+                        <a href="{% url 'students:dashboard' %}" class="nav-pill {% if section == 'my-home' %}nav-pill-active{% else %}nav-pill-inactive{% endif %}">My Hub</a>
+                        <a href="#" class="nav-pill {% if section == 'survey' %}nav-pill-active{% else %}nav-pill-inactive{% endif %}">Explore</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <button id="profile-dropdown-btn" class="h-10 w-10 rounded-full bg-neon-cyan/20 border border-neon-cyan/60 flex items-center justify-center text-white font-bold hover:bg-neon-cyan/30 transition cursor-pointer overflow-hidden">
+                            <span id="profile-btn-initial">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
+                            <img id="profile-btn-photo" src="" alt="Profile" class="h-full w-full object-cover hidden">
+                        </button>
+                        <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 glass-card rounded-2xl border border-white/10 shadow-xl z-50">
+                            <div class="p-2">
+                                <div class="px-3 py-2 border-b border-white/10">
+                                    <p id="profile-dropdown-name" class="text-sm font-semibold text-white">{{ user.get_full_name|default:user.username }}</p>
+                                    <p class="text-xs text-text-muted">{{ user.email }}</p>
+                                </div>
+                                <a href="{% url 'properties:owner_dashboard_section' 'profile' %}" class="block px-3 py-2 rounded-xl text-sm text-neon-cyan hover:bg-neon-cyan/10 transition">
+                                    Profile Setup
+                                </a>
+                                <a href="{% url 'accounts:logout' %}" class="block px-3 py-2 rounded-xl text-sm text-red-300 hover:bg-red-500/20 transition">
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile navigation is provided globally via base template -->
+        </div>
+    </nav>
+
+    <!-- Mobile secondary top bar (visible only on small screens) -->
+    <div class="mobile-secondary-bar md:hidden fixed top-16 left-0 right-0 z-40 bg-primary-dark/95 border-b border-white/6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-12">
+                <div class="w-full overflow-x-auto">
+                    <div class="flex items-center space-x-2 py-2">
+                        {% if user.is_authenticated and user.profile.role == 'property_owner' %}
+                        <a href="{% url 'properties:owner_dashboard' %}" class="mobile-nav-pill px-3 py-1 rounded-full text-sm text-neon-cyan hover:bg-white/5">Home</a>
+                        <a href="{% url 'properties:owner_dashboard_section' 'my-home' %}" class="mobile-nav-pill px-3 py-1 rounded-full text-sm text-text-muted hover:bg-white/5">My Home</a>
+                        <a href="{% url 'properties:owner_dashboard_section' 'survey' %}" class="mobile-nav-pill px-3 py-1 rounded-full text-sm text-text-muted hover:bg-white/5">Survey</a>
+                        {% else %}
+                        <a href="{% url 'students:dashboard' %}" class="mobile-nav-pill px-3 py-1 rounded-full text-sm text-neon-cyan hover:bg-white/5">Home</a>
+                        <a href="{% url 'students:dashboard' %}" class="mobile-nav-pill px-3 py-1 rounded-full text-sm text-text-muted hover:bg-white/5">My Hub</a>
+                        <a href="#" class="mobile-nav-pill px-3 py-1 rounded-full text-sm text-text-muted hover:bg-white/5">Explore</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="chat-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4">
+        <div class="glass-card rounded-2xl p-6 w-full max-w-md border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-xs text-text-muted uppercase">Direct Ping</p>
+                    <h3 class="text-xl font-semibold text-white" id="chat-recipient">Message Boarder</h3>
+                </div>
+                <button id="chat-close" class="text-text-muted hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="space-y-3 mb-4">
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3 text-sm text-text-muted">Replies are delivered via the tenant portal. Keep it concise and actionable.</div>
+                <textarea id="chat-text" class="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm focus:outline-none focus:border-neon-cyan" rows="4" placeholder="Your message..."></textarea>
+            </div>
+            <button id="chat-send" class="w-full primary-gradient text-gray-900 font-semibold py-3 rounded-2xl border-2 border-neon-orange">Send Ping</button>
+        </div>
+    </div>
+
+    <!-- Comments Modal -->
+    <div id="comments-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4">
+        <div class="glass-card rounded-2xl p-6 w-full max-w-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-white">Comments</h3>
+                <button id="comments-close" class="text-text-muted hover:text-white text-2xl">&times;</button>
+            </div>
+            <!-- Post Content Display -->
+            <div id="comments-post-content" class="mb-6 pb-6 border-b border-white/10"></div>
+            <!-- Comments List -->
+            <div id="comments-list" class="space-y-3 mb-4"></div>
+            <!-- Comment Form -->
+            <form id="comments-form" class="flex space-x-3">
+                <input type="text" id="comment-input" class="flex-1 rounded-2xl bg-white/5 border border-white/10 px-4 py-2 text-sm focus:outline-none focus:border-neon-cyan text-white placeholder-text-muted" placeholder="Write a comment..." required>
+                <button type="submit" class="px-4 rounded-2xl border border-neon-cyan text-neon-cyan text-xs font-semibold">Post</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div id="image-viewer-modal" class="hidden fixed inset-0 z-[60] bg-black/95 backdrop-blur flex items-center justify-center">
+        <button id="image-viewer-close" class="absolute top-4 right-4 text-white text-3xl z-10 hover:text-neon-cyan transition cursor-pointer" style="pointer-events: auto;">&times;</button>
+        <button id="image-viewer-prev" class="absolute left-4 text-white text-4xl z-10 hover:text-neon-cyan transition">‹</button>
+        <button id="image-viewer-next" class="absolute right-4 text-white text-4xl z-10 hover:text-neon-cyan transition">›</button>
+        <div id="image-viewer-container" class="max-w-7xl max-h-[90vh] flex items-center justify-center">
+            <img id="image-viewer-img" src="" alt="Viewer" class="max-w-full max-h-[90vh] object-contain">
+            <video id="image-viewer-video" src="" class="hidden max-w-full max-h-[90vh] object-contain" controls></video>
+        </div>
+        <div id="image-viewer-counter" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded-full"></div>
+    </div>
+
+    <!-- Edit Post Modal -->
+    <div id="edit-post-modal" class="hidden fixed inset-0 z-[70] bg-black/70 backdrop-blur flex items-center justify-center px-4">
+        <div class="glass-card rounded-2xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <header class="p-6 border-b border-white/10 sticky top-0 bg-inherit z-10">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-xl font-semibold text-white mb-1">Edit Post</h1>
+                    <button id="edit-post-modal-close" class="text-text-muted hover:text-white text-2xl">&times;</button>
+                </div>
+            </header>
+            <form id="edit-post-form" class="p-6 space-y-6">
+                <textarea id="edit-post-content" name="content" required 
+                          class="w-full p-4 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-text-muted focus:outline-none focus:border-neon-cyan focus:ring-2 focus:ring-neon-cyan/20 resize-y min-h-[120px]"
+                          placeholder="What's on your mind?"></textarea>
+                <div class="flex space-x-3">
+                    <button id="edit-post-button" type="submit" 
+                            class="flex-1 bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold py-3 rounded-2xl hover:bg-neon-cyan/30 hover:border-neon-cyan transition">
+                        Update Post
+                    </button>
+                    <button type="button" id="cancel-edit-post" class="px-6 py-3 rounded-2xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirm-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4">
+        <div class="glass-card rounded-2xl p-6 w-full max-w-md border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="delete-modal-title" class="text-xl font-semibold text-white">Delete Post</h3>
+                <button id="delete-modal-close" class="text-text-muted hover:text-white text-2xl">&times;</button>
+            </div>
+            <p id="delete-modal-message" class="text-text-muted mb-6">Are you sure you want to delete this post? This action cannot be undone.</p>
+            <div class="flex space-x-3">
+                <button id="delete-cancel-btn" class="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition">Cancel</button>
+                <button id="delete-confirm-btn" class="flex-1 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500 text-red-300 text-sm font-semibold hover:bg-red-500/30 transition">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-12">
+        {% block content %}{% endblock %}
+    </main>
+
+    <style>
+        /* Mobile secondary bar adjustments: add top padding to main content on small screens so content is not hidden */
+        @media (max-width: 767px) {
+            main { padding-top: 7rem; }
+            .mobile-nav-pill { display: inline-block; min-width: 72px; text-align: center; }
+        }
+    </style>
+
+    <script>
+        const toastStack = document.getElementById('toast-stack');
+        function getToastDuration(text = '') {
+            const length = text.trim().length;
+            if (length <= 30) return 3000;
+            if (length <= 60) return 4000;
+            if (length <= 100) return 5000;
+            if (length <= 150) return 6000;
+            return Math.min(15000, 6000 + (length - 150) * 40);
+        }
+        function showMessage(text, typeOrIsError = false) {
+            if (!toastStack) return;
+            // Normalize type: accept boolean legacy (true => 'error', false => 'success') or string types
+            let type = 'success';
+            if (typeof typeOrIsError === 'string') {
+                type = typeOrIsError;
+            } else if (typeof typeOrIsError === 'boolean') {
+                type = typeOrIsError ? 'error' : 'success';
+            }
+
+            const typeClasses = {
+                success: 'bg-green-900/80 border-green-400 text-green-100',
+                error:   'bg-red-900/80 border-red-400 text-red-100',
+                warning: 'bg-yellow-900/80 border-yellow-400 text-yellow-100',
+                info:    'bg-primary-dark/80 border-neon-cyan text-neon-cyan',
+            };
+
+            const toast = document.createElement('div');
+            toast.className = [
+                'toast-enter',
+                'rounded-2xl',
+                'px-5',
+                'py-4',
+                'shadow-2xl',
+                'border',
+                'backdrop-blur',
+                'text-sm',
+                'font-medium',
+                typeClasses[type] || typeClasses.success,
+            ].join(' ');
+            toast.textContent = text;
+            toastStack.appendChild(toast);
+            const duration = getToastDuration(text);
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+        const serverMessages = [
+        {% for message in messages %}
+            { text: "{{ message|escapejs }}", level: "{{ message.tags }}" }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+        ];
+        document.addEventListener('DOMContentLoaded', () => {
+            serverMessages.forEach((msg) => {
+                if (msg && msg.text) {
+                    const tags = (msg.level || '').toLowerCase();
+                    let msgType = 'success';
+                    if (tags.includes('error')) msgType = 'error';
+                    else if (tags.includes('warning')) msgType = 'warning';
+                    else if (tags.includes('info')) msgType = 'info';
+                    showMessage(msg.text, msgType);
+                }
+            });
+            const chatClose = document.getElementById('chat-close');
+            const chatSend = document.getElementById('chat-send');
+            if (chatClose) {
+                chatClose.addEventListener('click', () => document.getElementById('chat-modal').classList.add('hidden'));
+            }
+            if (chatSend) {
+                chatSend.addEventListener('click', () => {
+                    const text = document.getElementById('chat-text').value.trim();
+                    if (!text) {
+                        showMessage('Compose a message before sending.', true);
+                        return;
+                    }
+                    document.getElementById('chat-text').value = '';
+                    document.getElementById('chat-modal').classList.add('hidden');
+                    showMessage('Ping dispatched to boarder.');
+                });
+            }
+            
+            // Profile dropdown handler
+            const profileBtn = document.getElementById('profile-dropdown-btn');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            if (profileBtn && profileDropdown) {
+                profileBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    profileDropdown.classList.toggle('hidden');
+                });
+                document.addEventListener('click', (e) => {
+                    if (!profileDropdown.contains(e.target) && e.target !== profileBtn) {
+                        profileDropdown.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Update profile button photo and name
+            function updateProfileButtonPhoto() {
+                const profileBtnPhoto = document.getElementById('profile-btn-photo');
+                const profileBtnInitial = document.getElementById('profile-btn-initial');
+                const profileDropdownName = document.getElementById('profile-dropdown-name');
+                if (!profileBtnPhoto || !profileBtnInitial) return;
+                
+                const userId = '{{ user.id|default:"user_"|escapejs }}';
+                const profileStateKey = `owner_profile_settings_${userId}`;
+                try {
+                    // If a draft profile exists on the page (unsaved changes), prefer that for live preview
+                    const profileState = (window._ownerProfileDraft && typeof window._ownerProfileDraft === 'object') ? window._ownerProfileDraft : JSON.parse(localStorage.getItem(profileStateKey) || '{}');
+                    
+                    // Update photo and initial
+                    if (profileState.photo) {
+                        profileBtnPhoto.src = profileState.photo;
+                        profileBtnPhoto.classList.remove('hidden');
+                        profileBtnInitial.classList.add('hidden');
+                        profileBtnPhoto.onerror = () => {
+                            profileBtnPhoto.classList.add('hidden');
+                            profileBtnInitial.classList.remove('hidden');
+                        };
+                    } else {
+                        profileBtnPhoto.classList.add('hidden');
+                        profileBtnInitial.classList.remove('hidden');
+                    }
+                    
+                    // Update name in dropdown and initial button text
+                    if (profileState.fullName) {
+                        if (profileDropdownName) {
+                            profileDropdownName.textContent = profileState.fullName;
+                        }
+                        // Update initial with first letter of new name
+                        const newInitial = profileState.fullName.charAt(0).toUpperCase();
+                        profileBtnInitial.textContent = newInitial;
+                    }
+                } catch (err) {
+                    profileBtnPhoto.classList.add('hidden');
+                    profileBtnInitial.classList.remove('hidden');
+                }
+            }
+            
+            // Update on load and listen for storage changes
+            updateProfileButtonPhoto();
+            window.addEventListener('storage', updateProfileButtonPhoto);
+            // Also update when profile is saved (custom event)
+            document.addEventListener('profileUpdated', updateProfileButtonPhoto);
+
+            // Mobile nav handled globally in `base.html` to ensure consistent behavior across pages.
+
+            // ================================================================
+            // MOBILE TOUCH HOVER EFFECTS
+            // Add is-active class on touch/click for visual feedback on mobile
+            // ================================================================
+            function addTouchHoverEffects() {
+                // Check if device supports touch
+                const isTouchDevice = () => {
+                    return (('ontouchstart' in window) ||
+                            (navigator.maxTouchPoints > 0) ||
+                            (navigator.msMaxTouchPoints > 0));
+                };
+
+                if (!isTouchDevice()) return; // Skip if not a touch device
+
+                // Get all interactive cards
+                const cards = document.querySelectorAll('.glass-card, .post-feed article, .myhome-pill');
+
+                cards.forEach(card => {
+                    card.addEventListener('touchstart', function() {
+                        // Remove active class from siblings
+                        cards.forEach(c => c.classList.remove('is-active'));
+                        // Add to current card
+                        this.classList.add('is-active');
+                    });
+
+                    card.addEventListener('touchend', function() {
+                        // Keep the active state for visual feedback
+                        // Remove after a short delay
+                        setTimeout(() => {
+                            this.classList.remove('is-active');
+                        }, 200);
+                    });
+
+                    // Also handle click on desktop for testing
+                    if (window.innerWidth <= 768) {
+                        card.addEventListener('click', function() {
+                            cards.forEach(c => c.classList.remove('is-active'));
+                            this.classList.add('is-active');
+                            setTimeout(() => {
+                                this.classList.remove('is-active');
+                            }, 200);
+                        });
+                    }
+                });
+            }
+
+            // Initialize touch hover effects
+            addTouchHoverEffects();
+
+            // Re-initialize when content changes (for dynamically added cards)
+            const observer = new MutationObserver(() => {
+                addTouchHoverEffects();
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
+    <script src="/static/js/post_interactions.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
+

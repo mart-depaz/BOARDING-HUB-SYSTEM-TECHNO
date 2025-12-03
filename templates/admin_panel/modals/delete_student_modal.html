@@ -1,0 +1,100 @@
+<!-- Delete Student Modal -->
+<div id="delete-student-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <!-- Close Button -->
+        <button 
+            onclick="closeDeleteStudentModal()" 
+            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+        >
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <!-- Modal Content -->
+        <div class="p-6">
+            <div class="flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mx-auto">
+                <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+            </div>
+            
+            <h3 class="text-lg font-medium text-gray-900 mt-4 text-center">Delete Student</h3>
+            
+            <p class="text-sm text-gray-500 mt-3 text-center">
+                Are you sure you want to delete <span id="modal-student-name" class="font-semibold text-gray-900"></span>?
+            </p>
+            
+            <p class="text-sm text-gray-600 mt-2 text-center">
+                Student ID: <span id="modal-student-id" class="font-mono text-gray-900"></span>
+            </p>
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-4">
+                <p class="text-xs text-yellow-800">
+                    <strong>Note:</strong> This student will be moved to trash and can be restored within 30 days. After 30 days, the data will be permanently deleted.
+                </p>
+            </div>
+
+            <!-- Buttons -->
+            <form id="delete-student-form" method="POST" style="display: none;">
+                {% csrf_token %}
+            </form>
+            
+            <div class="mt-6 flex gap-3">
+                <button 
+                    type="button"
+                    onclick="closeDeleteStudentModal()" 
+                    class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition font-medium text-sm"
+                >
+                    Cancel
+                </button>
+                <button 
+                    type="button"
+                    onclick="submitDeleteStudent()" 
+                    class="flex-1 px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 transition font-medium text-sm"
+                >
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentStudentId = null;
+
+    function openDeleteStudentModal(studentId, studentName, studentID) {
+        currentStudentId = studentId;
+        document.getElementById('modal-student-name').textContent = studentName;
+        document.getElementById('modal-student-id').textContent = studentID;
+        document.getElementById('delete-student-modal').classList.remove('hidden');
+    }
+
+    function closeDeleteStudentModal() {
+        document.getElementById('delete-student-modal').classList.add('hidden');
+        currentStudentId = null;
+    }
+
+    function submitDeleteStudent() {
+        if (currentStudentId) {
+            const form = document.getElementById('delete-student-form');
+            form.action = `/admin-panel/students/${currentStudentId}/delete/`;
+            form.submit();
+        }
+    }
+
+    // Close modal when clicking on backdrop
+    document.getElementById('delete-student-modal')?.addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeDeleteStudentModal();
+        }
+    });
+
+    // Close modal when pressing Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !document.getElementById('delete-student-modal')?.classList.contains('hidden')) {
+            closeDeleteStudentModal();
+        }
+    });
+</script>
+

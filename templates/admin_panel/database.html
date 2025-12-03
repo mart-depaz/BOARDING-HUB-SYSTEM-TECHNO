@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+
+{% block title %}Database - Boarding Hub{% endblock %}
+
+{% block header_title %}Safety Management Panel{% endblock %}
+{% block current_view_title %}Database{% endblock %}
+
+{% block sidebar %}
+{% include 'admin_panel/_sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Scrollable container styling */
+    .database-scroll-container {
+        max-height: 600px;
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+    
+    .database-scroll-container::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .database-scroll-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .database-scroll-container::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 4px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .database-scroll-container:hover::-webkit-scrollbar-thumb {
+        opacity: 1;
+    }
+    
+    .database-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #a0aec0;
+    }
+    
+    /* Firefox */
+    .database-scroll-container {
+        scrollbar-color: transparent transparent;
+        scrollbar-width: thin;
+    }
+    
+    .database-scroll-container:hover {
+        scrollbar-color: #cbd5e0 transparent;
+    }
+</style>
+
+<header class="mb-8">
+    <h2 class="text-4xl font-bold text-gray-900">Database</h2>
+    <p class="text-gray-500 mt-1">Complete database of all students and property owners with detailed information.</p>
+</header>
+
+<!-- Include Modals -->
+{% include 'admin_panel/modals/delete_student_modal.html' %}
+{% include 'admin_panel/modals/student_detail_modal.html' %}
+{% include 'admin_panel/modals/property_owner_detail_modal.html' %}
+
+<!-- Students Section -->
+<div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+    <h3 class="text-2xl font-semibold text-gray-800 mb-6">Students Database</h3>
+    
+    <!-- Filters and Search Section -->
+    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Search Bar -->
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search Name or Student ID</label>
+                <input 
+                    type="text" 
+                    id="search" 
+                    name="search" 
+                    placeholder="Type name or ID..." 
+                    value="{{ request.GET.search }}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+            </div>
+            
+            <!-- Department Filter -->
+            <div>
+                <label for="department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                <select 
+                    id="department" 
+                    name="department" 
+                    onchange="updatePrograms(this.value)"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if request.GET.department|add:"0" == dept.id %}selected{% endif %}>
+                            {{ dept.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Program Filter (Dependent on Department) -->
+            <div>
+                <label for="program" class="block text-sm font-medium text-gray-700 mb-2">Program</label>
+                <select 
+                    id="program" 
+                    name="program" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                    <option value="">All Programs</option>
+                    {% for prog in programs %}
+                        <option value="{{ prog.id }}" data-department="{{ prog.department.id }}" {% if request.GET.program|add:"0" == prog.id %}selected{% endif %}>
+                            {{ prog.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Apply Filters Button -->
+            <div class="flex items-end">
+                <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- JavaScript for dependent program filtering -->
+    <script>
+        function updatePrograms(departmentId) {
+            const programSelect = document.getElementById('program');
+            const options = programSelect.querySelectorAll('option');
+            
+            // Reset program select
+            programSelect.value = '';
+            
+            // Show/hide program options based on selected department
+            options.forEach(option => {
+                if (option.value === '') {
+                    option.style.display = 'block'; // Always show "All Programs"
+                } else if (departmentId === '') {
+                    option.style.display = 'block'; // Show all when no department selected
+                } else {
+                    option.style.display = option.dataset.department === departmentId ? 'block' : 'none';
+                }
+            });
+        }
+        
+        // Initialize program filter visibility on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const departmentSelect = document.getElementById('department');
+            if (departmentSelect.value) {
+                updatePrograms(departmentSelect.value);
+            }
+        });
+    </script>
+
+    <div class="database-scroll-container">
+        {% if students %}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dept</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for student in students %}
+                <tr onclick="if(event.target.closest('button')) return; openStudentDetailModal({{ student.id }}, '{{ student.user.get_full_name|default:student.user.username|escapejs }}', '{{ student.student_id|escapejs }}', '{{ student.user.email|escapejs }}', '{% if student.department %}{{ student.department.code|default:student.department.name|escapejs }}{% else %}{% endif %}', '{% if student.program %}{{ student.program.code|default:student.program.name|escapejs }}{% else %}{% endif %}', '{{ student.year_level|default:''|escapejs }}', '{% if student.user.profile %}{{ student.user.profile.phone|default:''|escapejs }}{% else %}{% endif %}', '{% if student.emergency_contact_name %}{{ student.emergency_contact_name|escapejs }}{% else %}{% endif %}', '{% if student.emergency_contact_phone %}{{ student.emergency_contact_phone|escapejs }}{% else %}{% endif %}');" class="hover:bg-gray-50" style="cursor: pointer;">
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900">{{ student.student_id }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">{{ student.user.get_full_name|default:student.user.username|truncatewords:2 }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">{{ student.user.email|truncatechars:20 }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">{% if student.department %}{{ student.department.code|default:student.department.name }}{% else %}—{% endif %}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">{% if student.program %}{{ student.program.code|default:student.program.name }}{% else %}—{% endif %}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">{{ student.year_level|default:"—" }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
+                        {% for assignment in student.boarding_assignments.all %}
+                            {% if assignment.status == 'active' %}
+                                <span class="font-mono text-indigo-600">{{ assignment.property.property_id }}</span>
+                            {% endif %}
+                        {% empty %}
+                            <span class="text-gray-400">—</span>
+                        {% endfor %}
+                    </td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium">
+                        <button 
+                            type="button" 
+                            onclick="openDeleteStudentModal({{ student.id }}, '{{ student.user.get_full_name|default:student.user.username|escapejs }}', '{{ student.student_id|escapejs }}')"
+                            class="px-2 py-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition text-xs"
+                        >
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-center py-10 text-gray-500">No students found. Try adjusting your filters.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Property Owners Section -->
+<div class="bg-white p-6 rounded-2xl shadow-lg">
+    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Property Owners Database</h3>
+    <div class="database-scroll-container">
+        {% if property_owners %}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner Name</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Properties Owned</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for owner_profile in property_owners %}
+                <tr>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900" style="cursor: pointer;" onclick="openPropertyOwnerDetailModal({{ owner_profile.id }}, '{{ owner_profile.user.get_full_name|default:owner_profile.user.username|escapejs }}', '{{ owner_profile.user.email|escapejs }}', '{{ owner_profile.phone|default:''|escapejs }}')">{{ owner_profile.user.get_full_name|default:owner_profile.user.username|truncatewords:2 }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">{{ owner_profile.user.email|truncatechars:20 }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">{{ owner_profile.phone|default:"—"|truncatechars:15 }}</td>
+                    <td class="px-2 py-2 text-xs text-gray-500">
+                        {% for property in owner_profile.user.owned_properties.all|slice:":1" %}
+                            {{ property.address|truncatewords:3 }}
+                        {% empty %}
+                            <span class="text-gray-400">—</span>
+                        {% endfor %}
+                    </td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">
+                        {% for property in owner_profile.user.owned_properties.all|slice:":3" %}
+                            <span class="font-mono text-indigo-600 text-xs">{{ property.property_id }}</span>{% if not forloop.last %},{% endif %}
+                        {% empty %}
+                            <span class="text-gray-400">—</span>
+                        {% endfor %}
+                    </td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500">{{ owner_profile.user.owned_properties.count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-center py-10 text-gray-500">No property owners registered yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,57 @@
+<nav id="sidebar" class="sidebar fixed inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 lg:static lg:w-64 bg-indigo-900 text-white p-4 shadow-2xl flex-shrink-0 flex flex-col justify-between">
+    <div>
+        <!-- Logo/Title Area -->
+        <div class="text-white text-3xl font-extrabold p-4 mb-8 border-b border-indigo-700">
+            Admin Panel
+        </div>
+        
+        <!-- Navigation Links -->
+        <nav class="space-y-2">
+            <a href="{% url 'admin_panel:dashboard' %}" class="w-full flex items-center p-3 rounded-xl transition-all duration-200 {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-700 text-white shadow-lg font-semibold{% else %}text-indigo-200 hover:bg-indigo-800 hover:text-white{% endif %}">
+                <i class="fas fa-home w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                <span>Safety Dashboard</span>
+            </a>
+            <a href="{% url 'admin_panel:database' %}" class="w-full flex items-center p-3 rounded-xl transition-all duration-200 {% if request.resolver_match.url_name == 'database' %}bg-indigo-700 text-white shadow-lg font-semibold{% else %}text-indigo-200 hover:bg-indigo-800 hover:text-white{% endif %}">
+                <i class="fas fa-database w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                <span>Database</span>
+            </a>
+            <a href="{% url 'admin_panel:audits' %}" class="w-full flex items-center p-3 rounded-xl transition-all duration-200 {% if request.resolver_match.url_name == 'audits' %}bg-indigo-700 text-white shadow-lg font-semibold{% else %}text-indigo-200 hover:bg-indigo-800 hover:text-white{% endif %}">
+                <i class="fas fa-clipboard-check w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                <span>Property Audits</span>
+            </a>
+            <a href="{% url 'admin_panel:students' %}" class="w-full flex items-center p-3 rounded-xl transition-all duration-200 {% if request.resolver_match.url_name == 'students' %}bg-indigo-700 text-white shadow-lg font-semibold{% else %}text-indigo-200 hover:bg-indigo-800 hover:text-white{% endif %}">
+                <i class="fas fa-user-graduate w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                <span>Boarding Students</span>
+            </a>
+            <a href="{% url 'admin_panel:emergency' %}" class="w-full flex items-center p-3 rounded-xl transition-all duration-200 {% if request.resolver_match.url_name == 'emergency' %}bg-indigo-700 text-white shadow-lg font-semibold{% else %}text-indigo-200 hover:bg-indigo-800 hover:text-white{% endif %}">
+                <i class="fas fa-exclamation-triangle w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                <span>Emergency Log</span>
+            </a>
+            <a href="{% url 'admin_panel:survey_list' %}" class="w-full flex items-center p-3 rounded-xl transition-all duration-200 {% if 'survey' in request.resolver_match.url_name %}bg-indigo-700 text-white shadow-lg font-semibold{% else %}text-indigo-200 hover:bg-indigo-800 hover:text-white{% endif %}">
+                <i class="fas fa-clipboard-list w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                <span>Student Surveys</span>
+            </a>
+            <a href="{% url 'admin_panel:trash' %}" class="w-full flex items-center p-3 rounded-xl transition-all duration-200 {% if request.resolver_match.url_name == 'trash' %}bg-indigo-700 text-white shadow-lg font-semibold{% else %}text-indigo-200 hover:bg-indigo-800 hover:text-white{% endif %}">
+                <i class="fas fa-trash-alt w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                <span>Trash</span>
+            </a>
+        </nav>
+    </div>
+    
+    {% block sidebar_extra %}{% endblock %}
+    
+    <!-- Bottom Section: Settings and Logout Button -->
+    <div class="space-y-1 pb-4 pt-4 border-t border-indigo-700" style="margin-top: 12%">
+        <!-- LOGOUT BUTTON (Styled prominently) -->
+        <a href="{% url 'accounts:logout' %}" class="w-full flex items-center p-3 rounded-xl bg-red-600 text-white font-semibold shadow-xl hover:bg-red-700 transition-all duration-200 mt-4">
+            <i class="fas fa-sign-out-alt w-5 h-5 mr-3 text-center" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+            <span>Logout</span>
+        </a>
+        <!-- End LOGOUT BUTTON -->
+        
+        <div class="text-gray-400 text-xs truncate text-center mt-0.5">
+            User ID: <span class="font-mono text-indigo-300">{{ user.username|truncatechars:20 }}</span>
+        </div>
+    </div>
+</nav>
+

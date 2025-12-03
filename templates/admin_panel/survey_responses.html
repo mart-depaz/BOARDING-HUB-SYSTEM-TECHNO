@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Survey Responses - Boarding Hub{% endblock %}
+
+{% block header_title %}Safety Management Panel{% endblock %}
+{% block current_view_title %}Survey Responses{% endblock %}
+
+{% block sidebar %}
+{% include 'admin_panel/_sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <header class="mb-4">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">{{ survey.title }} - Responses</h2>
+                <p class="text-sm text-gray-500 mt-1">Review and manage student survey responses organized by department and program.</p>
+            </div>
+            <a href="{% url 'admin_panel:survey_list' %}" class="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition">
+                <i class="fas fa-arrow-left mr-1"></i>Back
+            </a>
+        </div>
+    </header>
+
+    <!-- Filter Tabs -->
+    <div class="bg-white p-4 rounded-xl shadow-lg mb-4">
+        <div class="flex flex-wrap gap-2">
+            {% if not show_trash %}
+            <a href="{% url 'admin_panel:survey_responses' survey.id %}" 
+               class="px-3 py-1.5 rounded-lg text-sm font-semibold transition {% if not status_filter %}bg-indigo-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                All ({{ all_count }})
+            </a>
+            <a href="{% url 'admin_panel:survey_responses' survey.id %}?status=pending" 
+               class="px-3 py-1.5 rounded-lg text-sm font-semibold transition {% if status_filter == 'pending' %}bg-yellow-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                Pending ({{ pending_count }})
+            </a>
+            <a href="{% url 'admin_panel:survey_responses' survey.id %}?status=rejected" 
+               class="px-3 py-1.5 rounded-lg text-sm font-semibold transition {% if status_filter == 'rejected' %}bg-red-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                Rejected ({{ rejected_count }})
+            </a>
+            <a href="{% url 'admin_panel:survey_responses' survey.id %}?status=registered" 
+               class="px-3 py-1.5 rounded-lg text-sm font-semibold transition {% if status_filter == 'registered' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                Registered ({{ registered_count }})
+            </a>
+            {% endif %}
+            <a href="{% url 'admin_panel:survey_responses' survey.id %}?trash=1" 
+               class="px-3 py-1.5 rounded-lg text-sm font-semibold transition {% if show_trash %}bg-gray-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                <i class="fas fa-trash mr-1"></i>Trash ({{ trash_count }})
+            </a>
+        </div>
+    </div>
+
+    <!-- Survey Category Display -->
+    {% if survey.category %}
+    <div class="bg-blue-50 p-3 rounded-lg mb-4 border-l-4 border-blue-500">
+        <p class="text-sm text-blue-700"><strong>Survey Type:</strong> {{ survey.get_category_display }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Flat Students List -->
+    <form method="post" class="space-y-2">
+    {% csrf_token %}
+    
+    {% if responses %}
+    <!-- Select All and Bulk Actions -->
+    {% if not show_trash %}
+    <div class="bg-gray-50 px-4 py-3 rounded-lg border border-gray-200 flex justify-between items-center">
+        <label class="inline-flex items-center">
+            <input type="checkbox" id="select-all-responses" class="mr-2"> 
+            <span class="text-sm font-medium text-gray-700">Select All Responses</span>
+        </label>
+        <div class="flex space-x-2">
+            <button type="submit" name="bulk_action" value="approve" class="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded hover:bg-green-700 transition">Approve Selected</button>
+            <button type="submit" name="bulk_action" value="reject" class="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded hover:bg-red-700 transition">Reject Selected</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Student Responses List -->
+    <div class="space-y-3">
+    {% for response in responses %}
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 {% if response.status == 'pending' %}border-yellow-500{% elif response.status == 'registered' %}border-blue-500{% elif response.status == 'rejected' %}border-red-500{% else %}border-gray-500{% endif %}">
+        <div class="flex justify-between items-start">
+            <div class="flex-1">
+                <div class="flex items-center space-x-3 mb-2">
+                    <input type="checkbox" name="selected" value="{{ response.id }}" class="response-checkbox">
+                    <h3 class="font-bold text-gray-900">{{ response.student_name }}</h3>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold {% if response.status == 'pending' %}bg-yellow-100 text-yellow-700{% elif response.status == 'registered' %}bg-blue-100 text-blue-700{% elif response.status == 'rejected' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                        {{ response.get_status_display }}
+                    </span>
+                </div>
+                <div class="space-y-1 text-sm text-gray-600">
+                    <p><i class="fas fa-envelope mr-2"></i>{{ response.student_email }}</p>
+                    {% if response.student_phone %}
+                    <p><i class="fas fa-phone mr-2"></i>{{ response.student_phone }}</p>
+                    {% endif %}
+                    {% if response.display_department %}
+                    <p><i class="fas fa-building mr-2"></i>{{ response.display_department }}</p>
+                    {% endif %}
+                    {% if response.display_program %}
+                    <p><i class="fas fa-graduation-cap mr-2"></i>{{ response.display_program }}</p>
+                    {% endif %}
+                    <p><i class="fas fa-clock mr-2"></i>Submitted {{ response.created_at|date:"M d, Y H:i" }}</p>
+                    {% if response.deleted_at %}
+                    <p class="text-red-600"><i class="fas fa-trash mr-2"></i>Deleted {{ response.deleted_at|date:"M d, Y" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex flex-col space-y-1">
+                {% if not show_trash %}
+                <a href="{% url 'admin_panel:survey_response_detail' response.id %}" class="px-3 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 text-center">
+                    <i class="fas fa-eye mr-0.5"></i>{% if response.status == 'pending' %}Review{% else %}View{% endif %}
+                </a>
+                <a href="{% url 'admin_panel:delete_survey_response' response.id %}" class="px-3 py-2 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700 text-center" onclick="return confirm('Move to trash?');">
+                    <i class="fas fa-trash mr-0.5"></i>Delete
+                </a>
+                {% else %}
+                <a href="{% url 'admin_panel:restore_survey_response' response.id %}" class="px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700 text-center">
+                    <i class="fas fa-undo mr-0.5"></i>Restore
+                </a>
+                <a href="{% url 'admin_panel:permanently_delete_survey_response' response.id %}" class="px-3 py-2 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700 text-center" onclick="return confirm('Permanently delete?');">
+                    <i class="fas fa-trash-alt mr-0.5"></i>Delete
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+    
+    {% else %}
+    <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+        <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
+        <h3 class="text-lg font-bold text-gray-700 mb-1">No Responses</h3>
+        <p class="text-sm text-gray-500">No students have submitted responses for this survey yet.</p>
+    </div>
+    {% endif %}
+    </form>
+</div>
+
+{% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select all responses functionality
+    const selectAllCheckbox = document.getElementById('select-all-responses');
+    const responseCheckboxes = document.querySelectorAll('.response-checkbox');
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            responseCheckboxes.forEach(cb => {
+                cb.checked = this.checked;
+            });
+        });
+    }
+    
+    // Keep select-all in sync when individual checkboxes change
+    responseCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = Array.from(responseCheckboxes).every(cb => cb.checked);
+            const someChecked = Array.from(responseCheckboxes).some(cb => cb.checked);
+            
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = allChecked;
+                selectAllCheckbox.indeterminate = someChecked && !allChecked;
+            }
+        });
+    });
+});
+</script>

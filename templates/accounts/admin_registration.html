@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Registration - University/College Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; }
+        .message-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(0);
+            z-index: 99999;
+            min-width: 400px;
+            max-width: 90%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            font-weight: 500;
+            animation: slideDown 0.3s ease-out;
+        }
+        .message-alert .close-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            border: none;
+            color: currentColor;
+            font-size: 1.25rem;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+        .message-alert .close-btn:hover {
+            opacity: 1;
+        }
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        .message-alert.fade-out {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 sm:p-10 border border-gray-100 transition duration-300 hover:shadow-3xl">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-indigo-700">
+                <span class="inline-block align-middle">
+                    <i class="fas fa-user-shield h-8 w-8 mr-2"></i>
+                </span>
+                University Admin Onboarding
+            </h1>
+            <p class="text-gray-600 mt-2 text-lg">Create your institution's centralized administrator account.</p>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message-alert p-4 pr-10 rounded-xl {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-800{% elif message.tags == 'success' %}bg-green-50 border-green-200 text-green-800{% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+                    <button class="close-btn" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 500);" aria-label="Close" style="position: absolute; top: 8px; right: 8px; background: transparent; border: none; color: currentColor; font-size: 1.25rem; font-weight: bold; cursor: pointer; opacity: 0.6; transition: opacity 0.2s; padding: 4px 8px; line-height: 1;">&times;</button>
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mr-3">
+                            {% if message.tags == 'error' %}
+                                <i class="fas fa-exclamation-circle text-red-600 text-xl"></i>
+                            {% elif message.tags == 'success' %}
+                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-semibold">{{ message }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post" id="admin-signup-form">
+            {% csrf_token %}
+            <!-- Organization Name -->
+            <div class="mb-5">
+                <label for="org-name" class="block text-sm font-medium text-gray-700 mb-1">University / College Name</label>
+                <input type="text" id="org-name" name="org-name" required placeholder="e.g., State University of Science"
+                       value="{{ org_name|default:'' }}"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition duration-150">
+            </div>
+            
+            <!-- Email -->
+            <div class="mb-5">
+                <label for="admin-email" class="block text-sm font-medium text-gray-700 mb-1">Work Email</label>
+                <input type="email" id="admin-email" name="admin-email" required placeholder="admin@university.edu"
+                       value="{{ admin_email|default:'' }}"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition duration-150">
+            </div>
+            
+            <!-- Password -->
+            <div class="mb-5">
+                <label for="admin-password" class="block text-sm font-medium text-gray-700 mb-1">Password (Min 8 characters)</label>
+                <input type="password" id="admin-password" name="admin-password" required minlength="8"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition duration-150">
+            </div>
+            
+            <!-- Confirm Password -->
+            <div class="mb-8">
+                <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input type="password" id="confirm-password" name="confirm-password" required
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition duration-150">
+            </div>
+            
+            <!-- Submission Button -->
+            <button type="submit" id="signup-button"
+                    class="w-full py-3 px-4 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-300 transform hover:scale-[1.01]">
+                Register Account
+            </button>
+        </form>
+        
+        <p class="text-center text-sm text-gray-500 mt-6">
+            Already have an account? 
+            <a href="{% url 'admin_panel:admin_login' %}" class="text-indigo-600 hover:text-indigo-800 font-medium transition duration-150">Sign In here</a>
+        </p>
+    </div>
+    
+    <script>
+        // Auto-dismiss messages with duration based on text length
+        document.addEventListener('DOMContentLoaded', () => {
+            const messages = document.querySelectorAll('.message-alert');
+            messages.forEach((message) => {
+                // Get the message text
+                const messageText = message.textContent || '';
+                const textLength = messageText.trim().length;
+                
+                // Calculate duration based on text length
+                let duration;
+                if (textLength <= 30) {
+                    duration = 3000; // 3 seconds for very short messages
+                } else if (textLength <= 60) {
+                    duration = 4000; // 4 seconds for short messages
+                } else if (textLength <= 100) {
+                    duration = 5000; // 5 seconds for medium messages
+                } else if (textLength <= 150) {
+                    duration = 6000; // 6 seconds for longer messages
+                } else {
+                    // For very long messages: base 6 seconds + 0.05 seconds per character over 150
+                    duration = 6000 + ((textLength - 150) * 50);
+                    // Cap at 15 seconds maximum
+                    duration = Math.min(duration, 15000);
+                }
+                
+                setTimeout(() => {
+                    if (!message.classList.contains('fade-out')) {
+                        message.classList.add('fade-out');
+                        setTimeout(() => {
+                            message.remove();
+                        }, 500); // Remove after fade animation completes
+                    }
+                }, duration);
+            });
+        });
+    </script>
+</body>
+</html>
+

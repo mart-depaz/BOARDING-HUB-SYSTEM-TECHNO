@@ -1,0 +1,48 @@
+<!--
+templates/students/messenger_students.html
+-->
+
+
+{% extends 'students/layout_students.html' %}
+
+{% block title %}My Messenger - Boarding Hub System{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-4">
+    <!-- Center the messenger panel inside the page content. On large screens limit width so it visually centers. -->
+    <div class="messenger-centered">
+        <div class="messenger-frame w-full lg:w-[980px]">
+            {% include 'students/partials/my_home_messenger_students.html' %}
+        </div>
+    </div>
+</div>
+
+    <style>
+    /* Centering helper for messenger page: match typical content container width and center it */
+    .messenger-centered { display: flex; justify-content: center; }
+    .messenger-frame { width: 100%; max-width: 980px; margin: 0 auto; box-sizing: border-box; }
+    @media (min-width: 1280px) {
+        /* On very wide screens slightly tighten max width to match other content blocks */
+        .messenger-frame { max-width: 1024px; }
+    }
+    </style>
+
+<script>
+(function() {
+    const initialUser = '{{ initial_user_id|default:"" }}';
+    if (initialUser) {
+        // Set pending and dispatch after small delay so messenger JS can pick it up
+        window.pendingChatUserId = initialUser;
+        setTimeout(() => {
+            try {
+                const ev = new CustomEvent('openConversationByUser', { detail: { userId: initialUser } });
+                document.dispatchEvent(ev);
+            } catch (err) {
+                console.warn('Could not dispatch openConversationByUser', err);
+            }
+        }, 250);
+    }
+})();
+</script>
+
+{% endblock %}

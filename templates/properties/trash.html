@@ -1,0 +1,385 @@
+<!--
+templates/properties/trash.html
+-->
+
+{% extends "properties/layout.html" %}
+
+{% block title %}Trash - Boarding Hub System{% endblock %}
+
+{% block content %}
+<section class="glass-card rounded-3xl p-6 space-y-8">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center space-x-4">
+            <a href="{% url 'properties:owner_dashboard_section' 'my-home' %}" class="text-white hover:text-neon-cyan transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+            <div>
+                <p class="text-xs uppercase tracking-[0.5em] text-neon-cyan">Trash</p>
+                <h2 class="text-3xl font-bold text-white mt-1">Deleted Posts</h2>
+                <p class="text-text-muted text-sm mt-2">Manage your deleted posts and restore if needed.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="flex items-center justify-center gap-4 mb-6">
+        <button id="trash-filter-all" class="px-4 py-2 rounded-xl border border-neon-cyan text-neon-cyan text-sm font-semibold hover:bg-neon-cyan/10 transition">All</button>
+        <button id="trash-filter-recent" class="px-4 py-2 rounded-xl border border-white/20 text-text-muted text-sm font-semibold hover:bg-white/10 transition">Recent</button>
+        <button id="trash-filter-old" class="px-4 py-2 rounded-xl border border-white/20 text-text-muted text-sm font-semibold hover:bg-white/10 transition">Older</button>
+    </div>
+    
+    <div id="trash-content" class="space-y-6">
+        <p class="text-text-muted text-center py-6">Trash is empty. Deleted posts will appear here.</p>
+    </div>
+</section>
+
+<!-- Restore Confirmation Modal -->
+<div id="restore-confirm-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4">
+    <div class="glass-card rounded-2xl p-6 w-full max-w-md border border-white/10">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Restore Post</h3>
+            <button id="restore-modal-close" class="text-text-muted hover:text-white text-2xl">&times;</button>
+        </div>
+        <p class="text-text-muted mb-6">Are you sure you want to restore this post? It will be moved back to your posts.</p>
+        <div class="flex space-x-3">
+            <button id="restore-cancel-btn" class="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition">Cancel</button>
+            <button id="restore-confirm-btn" class="flex-1 px-4 py-2 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan text-sm font-semibold hover:bg-neon-cyan/30 transition">Restore</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Permanent Confirmation Modal -->
+<div id="delete-permanent-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4">
+    <div class="glass-card rounded-2xl p-6 w-full max-w-md border border-white/10">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Delete Permanently</h3>
+            <button id="delete-permanent-modal-close" class="text-text-muted hover:text-white text-2xl">&times;</button>
+        </div>
+        <p class="text-text-muted mb-6">Are you sure you want to permanently delete this post? This action cannot be undone.</p>
+        <div class="flex space-x-3">
+            <button id="delete-permanent-cancel-btn" class="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition">Cancel</button>
+            <button id="delete-permanent-confirm-btn" class="flex-1 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500 text-red-300 text-sm font-semibold hover:bg-red-500/30 transition">Delete Permanently</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Escape HTML to prevent XSS when inserting user content into innerHTML
+function escapeHtml(value = '') {
+    const HTML_ESCAPE_LOOKUP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return String(value).replace(/[&<>"']/g, (char) => HTML_ESCAPE_LOOKUP[char] || char);
+}
+
+function getDaysUntilPermanentDelete(deletedAt) {
+    const deleted = new Date(deletedAt);
+    const now = new Date();
+    const daysDiff = Math.ceil((30 * 24 * 60 * 60 * 1000 - (now - deleted)) / (24 * 60 * 60 * 1000));
+    return Math.max(0, daysDiff);
+}
+
+function formatTrashPost(post) {
+    const deletedDate = new Date(post.deletedAt);
+    const daysLeft = getDaysUntilPermanentDelete(post.deletedAt);
+    
+    let imagesHtml = '';
+    if (post.images && post.images.length > 0) {
+        const firstImage = post.images[0];
+        const isVideo = typeof firstImage === 'string' && (firstImage.includes('.mp4') || firstImage.includes('video'));
+        if (isVideo) {
+            imagesHtml = `<video src="${firstImage}" class="w-20 h-20 object-cover rounded-lg border border-white/10" controls></video>`;
+        } else {
+            imagesHtml = `<img src="${firstImage}" class="w-20 h-20 object-cover rounded-lg border border-white/10" alt="Post thumbnail">`;
+        }
+    }
+    
+    let locationHtml = '';
+    if (post.location) {
+        if (typeof post.location === 'object' && post.location !== null) {
+            const province = post.location.province || '';
+            const city = post.location.city || '';
+            const barangay = post.location.barangay || '';
+            const address = post.location.address || '';
+            const parts = [province, city, barangay, address].filter(p => p && String(p).trim());
+            if (parts.length) {
+                locationHtml = `<p class="text-xs text-text-muted mt-1">📍 ${escapeHtml(parts.join(', '))}</p>`;
+            }
+        } else {
+            locationHtml = `<p class="text-xs text-text-muted mt-1">📍 ${escapeHtml(String(post.location))}</p>`;
+        }
+    }
+    
+    return `
+        <div class="glass-card rounded-2xl p-4 border border-white/10" data-post-id="${post.id}">
+            <div class="flex items-start space-x-4">
+                ${imagesHtml ? `<div class="flex-shrink-0">${imagesHtml}</div>` : ''}
+                <div class="flex-1 min-w-0">
+                    <p class="text-text-muted text-sm line-clamp-2">${post.content}</p>
+                    ${locationHtml}
+                    <div class="mt-3 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-text-muted">Deleted: ${deletedDate.toLocaleDateString()}</span>
+                            <span class="text-xs ${daysLeft > 7 ? 'text-neon-green' : daysLeft > 3 ? 'text-yellow-400' : 'text-red-400'} ml-3">
+                                ${daysLeft} days until permanent deletion
+                            </span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="restore-post-btn px-3 py-1 rounded-xl border border-neon-cyan text-neon-cyan text-xs font-semibold hover:bg-neon-cyan/10 transition" data-post-id="${post.id}">Restore</button>
+                            <button class="delete-permanent-btn px-3 py-1 rounded-xl border border-red-500 text-red-300 text-xs font-semibold hover:bg-red-500/20 transition" data-post-id="${post.id}">Delete Permanently</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const trashContent = document.getElementById('trash-content');
+    const deletedPosts = localStorage.getItem('deleted_posts');
+    
+    function renderTrashPosts(filter = 'all') {
+        if (!deletedPosts || !JSON.parse(deletedPosts).length) {
+            trashContent.innerHTML = '<p class="text-text-muted text-center py-6">Trash is empty. Deleted posts will appear here.</p>';
+            return;
+        }
+        
+        let posts = JSON.parse(deletedPosts);
+        const now = new Date();
+        
+        if (filter === 'recent') {
+            posts = posts.filter(p => {
+                const deleted = new Date(p.deletedAt);
+                return (now - deleted) < 7 * 24 * 60 * 60 * 1000; // Last 7 days
+            });
+        } else if (filter === 'old') {
+            posts = posts.filter(p => {
+                const deleted = new Date(p.deletedAt);
+                return (now - deleted) >= 7 * 24 * 60 * 60 * 1000; // Older than 7 days
+            });
+        }
+        
+        // Auto-delete posts older than 30 days
+        const activePosts = posts.filter(p => {
+            const deleted = new Date(p.deletedAt);
+            return (now - deleted) < 30 * 24 * 60 * 60 * 1000;
+        });
+        
+        // Update localStorage with only active posts
+        if (activePosts.length !== posts.length) {
+            localStorage.setItem('deleted_posts', JSON.stringify(activePosts));
+        }
+        
+        if (activePosts.length === 0) {
+            trashContent.innerHTML = '<p class="text-text-muted text-center py-6">No posts in this category.</p>';
+            return;
+        }
+        
+        // Sort by newest first (most recently deleted first)
+        activePosts.sort((a, b) => {
+            const dateA = new Date(a.deletedAt);
+            const dateB = new Date(b.deletedAt);
+            return dateB - dateA; // Descending order (newest first)
+        });
+        
+        trashContent.innerHTML = activePosts.map(formatTrashPost).join('');
+        
+        // Attach event listeners
+        document.querySelectorAll('.restore-post-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                showRestoreConfirmModal(postId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-permanent-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                showDeletePermanentModal(postId);
+            });
+        });
+    }
+    
+    function showRestoreConfirmModal(postId) {
+        const modal = document.getElementById('restore-confirm-modal');
+        const confirmBtn = document.getElementById('restore-confirm-btn');
+        const cancelBtn = document.getElementById('restore-cancel-btn');
+        const closeBtn = document.getElementById('restore-modal-close');
+        
+        if (!modal) return;
+        
+        modal.classList.remove('hidden');
+        
+        // Remove existing listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        const newCloseBtn = closeBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+        
+        newConfirmBtn.addEventListener('click', () => {
+            restorePost(postId);
+            modal.classList.add('hidden');
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        });
+        
+        newCancelBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+        
+        newCloseBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
+    
+    function showDeletePermanentModal(postId) {
+        const modal = document.getElementById('delete-permanent-modal');
+        const confirmBtn = document.getElementById('delete-permanent-confirm-btn');
+        const cancelBtn = document.getElementById('delete-permanent-cancel-btn');
+        const closeBtn = document.getElementById('delete-permanent-modal-close');
+        
+        if (!modal) return;
+        
+        modal.classList.remove('hidden');
+        
+        // Remove existing listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        const newCloseBtn = closeBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+        
+        newConfirmBtn.addEventListener('click', () => {
+            deletePermanently(postId);
+            modal.classList.add('hidden');
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        });
+        
+        newCancelBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+        
+        newCloseBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
+    
+    function restorePost(postId) {
+        const deletedPosts = JSON.parse(localStorage.getItem('deleted_posts') || '[]');
+        const pidStr = postId != null ? postId.toString() : postId;
+        const post = deletedPosts.find(p => (p.id != null && p.id.toString() === pidStr));
+        if (!post) return;
+
+        // Remove from trash (handle storage quota)
+        const filtered = deletedPosts.filter(p => !(p.id != null && p.id.toString() === pidStr));
+        try {
+            localStorage.setItem('deleted_posts', JSON.stringify(filtered));
+        } catch (err) {
+            const isQuota = err && (err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED' || err.code === 22);
+            if (isQuota) {
+                console.warn('localStorage quota exceeded when updating deleted_posts during restore; attempting to trim oldest entries');
+                // As a fallback try trimming oldest entries until it fits
+                let tmp = filtered.slice();
+                while (tmp.length > 0) {
+                    tmp.pop();
+                    try {
+                        localStorage.setItem('deleted_posts', JSON.stringify(tmp));
+                        break;
+                    } catch (e2) {
+                        continue;
+                    }
+                }
+            } else {
+                throw err;
+            }
+        }
+
+        // Add back to active posts and keep ordering by original timestamp
+        const posts = JSON.parse(localStorage.getItem('owner_posts') || '[]');
+        // remove deleted marker but keep original `timestamp` intact
+        delete post.deletedAt;
+        posts.push(post);
+        // Sort posts by `timestamp` (newest first) so restored post returns to its original position
+        posts.sort((a, b) => new Date(b.timestamp || b.createdAt || 0) - new Date(a.timestamp || a.createdAt || 0));
+        try {
+            localStorage.setItem('owner_posts', JSON.stringify(posts));
+        } catch (err) {
+            const isQuota = err && (err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED' || err.code === 22);
+            if (isQuota) {
+                console.warn('localStorage quota exceeded when saving owner_posts during restore; attempting to trim local owner_posts to keep minimal entries');
+                // Keep only the most recent 20 posts as a fallback
+                const trimmed = posts.slice(0, 20);
+                try {
+                    localStorage.setItem('owner_posts', JSON.stringify(trimmed));
+                } catch (e2) {
+                    console.error('Failed to save owner_posts after trimming due to quota');
+                    showMessage('Could not fully restore post locally due to storage limits.', true);
+                }
+            } else {
+                throw err;
+            }
+        }
+
+        renderTrashPosts(document.querySelector('.trash-filter-active')?.id.replace('trash-filter-', '') || 'all');
+        showMessage('Post restored successfully.');
+    }
+    
+    function deletePermanently(postId) {
+        const deletedPosts = JSON.parse(localStorage.getItem('deleted_posts') || '[]');
+        const pidStr = postId != null ? postId.toString() : postId;
+        const filtered = deletedPosts.filter(p => !(p.id != null && p.id.toString() === pidStr));
+        localStorage.setItem('deleted_posts', JSON.stringify(filtered));
+        
+        renderTrashPosts(document.querySelector('.trash-filter-active')?.id.replace('trash-filter-', '') || 'all');
+        showMessage('Post permanently deleted.');
+    }
+    
+    // Filter buttons
+    document.getElementById('trash-filter-all')?.addEventListener('click', function() {
+        document.querySelectorAll('[id^="trash-filter-"]').forEach(b => {
+            b.classList.remove('border-neon-cyan', 'text-neon-cyan');
+            b.classList.add('border-white/20', 'text-text-muted');
+            b.classList.remove('trash-filter-active');
+        });
+        this.classList.add('border-neon-cyan', 'text-neon-cyan', 'trash-filter-active');
+        this.classList.remove('border-white/20', 'text-text-muted');
+        renderTrashPosts('all');
+    });
+    
+    document.getElementById('trash-filter-recent')?.addEventListener('click', function() {
+        document.querySelectorAll('[id^="trash-filter-"]').forEach(b => {
+            b.classList.remove('border-neon-cyan', 'text-neon-cyan');
+            b.classList.add('border-white/20', 'text-text-muted');
+            b.classList.remove('trash-filter-active');
+        });
+        this.classList.add('border-neon-cyan', 'text-neon-cyan', 'trash-filter-active');
+        this.classList.remove('border-white/20', 'text-text-muted');
+        renderTrashPosts('recent');
+    });
+    
+    document.getElementById('trash-filter-old')?.addEventListener('click', function() {
+        document.querySelectorAll('[id^="trash-filter-"]').forEach(b => {
+            b.classList.remove('border-neon-cyan', 'text-neon-cyan');
+            b.classList.add('border-white/20', 'text-text-muted');
+            b.classList.remove('trash-filter-active');
+        });
+        this.classList.add('border-neon-cyan', 'text-neon-cyan', 'trash-filter-active');
+        this.classList.remove('border-white/20', 'text-text-muted');
+        renderTrashPosts('old');
+    });
+    
+    // Initial render
+    renderTrashPosts('all');
+    document.getElementById('trash-filter-all')?.classList.add('trash-filter-active');
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,1619 @@
+<!--
+templates/properties/partials/community_feeds.html
+-->
+
+<div class="myhome-panel" data-panel="posts">
+    {% csrf_token %}
+    <div class="space-y-6">
+        <!-- Create Post Modal -->
+        {% if user.is_authenticated and user.profile.role == 'property_owner' %}
+        <div
+            id="post-form-modal"
+            class="hidden fixed inset-0 z-[70] bg-black/70 backdrop-blur flex items-center justify-center px-4"
+        >
+            <div
+                class="glass-card rounded-2xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+                <header
+                    class="p-6 border-b border-white/10 sticky top-0 bg-inherit z-10"
+                >
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-xl font-semibold text-white mb-1">
+                                Create New Post
+                            </h1>
+                            <p class="text-text-muted text-sm">
+                                Promote your property or share updates.
+                            </p>
+                        </div>
+                        <button
+                            id="post-modal-close"
+                            class="text-text-muted hover:text-white text-2xl"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                </header>
+                <form id="post-form" class="p-6 space-y-6">
+                    <!-- User Info Bar -->
+                    <div
+                        id="post-form-user-info"
+                        class="flex items-start space-x-3 border-b border-white/10 pb-4"
+                    >
+                        <!-- Profile picture will be injected here by JavaScript -->
+                    </div>
+
+                    <!-- Main Text Input Area -->
+                    <div class="relative">
+                        <textarea
+                            id="post-content"
+                            name="content"
+                            required
+                            class="w-full p-4 pr-12 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-text-muted focus:outline-none focus:border-neon-cyan focus:ring-2 focus:ring-neon-cyan/20 resize-y min-h-[120px]"
+                            placeholder="What's on your mind?"
+                        ></textarea>
+                        <button
+                            type="button"
+                            id="emoji-picker-btn"
+                            class="absolute bottom-4 right-4 text-2xl hover:scale-110 transition cursor-pointer"
+                            title="Add emoji"
+                        >
+                            😊
+                        </button>
+                    </div>
+                    <!-- Emoji Picker Modal -->
+                    <div
+                        id="emoji-picker-modal"
+                        class="hidden fixed inset-0 z-[70] bg-black/70 backdrop-blur flex items-center justify-center px-4"
+                    >
+                        <div
+                            class="glass-card rounded-2xl p-6 border border-white/10 max-w-2xl w-full max-h-[80vh] flex flex-col"
+                        >
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xl font-semibold text-white">
+                                    Select Emoji
+                                </h3>
+                                <button
+                                    id="emoji-modal-close"
+                                    class="text-text-muted hover:text-white text-2xl"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                            <div
+                                id="emoji-picker-container"
+                                class="overflow-y-auto flex-1"
+                            >
+                                <div
+                                    class="grid grid-cols-8 gap-2"
+                                    id="emoji-grid"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected Images Preview -->
+                    <div id="image-preview-container" class="hidden">
+                        <div
+                            class="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                            id="image-preview-grid"
+                        ></div>
+                    </div>
+
+                    <!-- Attachment Options -->
+                    <div
+                        class="flex justify-between space-x-2 border-y border-white/10 py-3"
+                    >
+                        <!-- Button: Photo/Video -->
+                        <button
+                            type="button"
+                            id="photo-video-btn"
+                            class="flex-1 flex items-center justify-center p-2 rounded-xl bg-white/5 border border-white/10 text-text-muted hover:text-neon-cyan hover:border-neon-cyan/40 hover:bg-neon-cyan/10 transition"
+                        >
+                            <svg
+                                class="w-6 h-6 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                ></path>
+                            </svg>
+                            <span class="text-sm font-medium hidden sm:inline"
+                                >Photo/Video</span
+                            >
+                        </button>
+                        <input
+                            type="file"
+                            id="image-input"
+                            accept="image/*,video/*"
+                            multiple
+                            class="hidden"
+                        />
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex space-x-3">
+                        <button
+                            id="post-button"
+                            type="submit"
+                            class="flex-1 bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold py-3 rounded-2xl hover:bg-neon-cyan/30 hover:border-neon-cyan transition"
+                        >
+                            Post
+                        </button>
+                        <button
+                            type="button"
+                            id="cancel-create-form"
+                            class="px-6 py-3 rounded-2xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div
+            id="delete-confirm-modal"
+            class="hidden fixed inset-0 z-[70] bg-black/70 backdrop-blur flex items-center justify-center px-4"
+        >
+            <div
+                class="glass-card rounded-2xl p-6 border border-white/10 max-w-sm w-full"
+            >
+                <div class="flex items-center justify-between mb-4">
+                    <h3
+                        id="delete-modal-title"
+                        class="text-xl font-semibold text-white"
+                    >
+                        Delete Post
+                    </h3>
+                    <button
+                        id="delete-modal-close"
+                        class="text-text-muted hover:text-white text-2xl"
+                    >
+                        &times;
+                    </button>
+                </div>
+                <p id="delete-modal-message" class="text-text-muted mb-6">
+                    Are you sure you want to delete this post? This action
+                    cannot be undone.
+                </p>
+                <div class="flex space-x-3">
+                    <button
+                        id="delete-cancel-btn"
+                        class="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        id="delete-confirm-btn"
+                        class="flex-1 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500 text-red-400 text-sm font-semibold hover:bg-red-500/30 transition"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Community Feed Container -->
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-white mb-2">
+                Community News Feed
+            </h2>
+            <p class="text-text-muted text-sm mb-4">
+                Stay updated with the latest posts from the community
+            </p>
+
+            <!-- Location Filter -->
+            <div class="glass-card rounded-2xl p-4 border border-white/10 mb-4">
+                <p class="text-sm font-semibold text-white mb-3">
+                    Filter by Location
+                </p>
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3"
+                >
+                    <select
+                        id="filter-region"
+                        class="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-cyan"
+                    >
+                        <option value="">All Regions</option>
+                        <option value="Caraga (Region XIII)">
+                            Caraga (Region XIII)
+                        </option>
+                    </select>
+                    <select
+                        id="filter-province"
+                        class="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-cyan"
+                    >
+                        <option value="">All Provinces</option>
+                    </select>
+                    <select
+                        id="filter-city"
+                        class="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-cyan"
+                    >
+                        <option value="">All Cities/Municipalities</option>
+                    </select>
+                    <select
+                        id="filter-barangay"
+                        class="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-cyan"
+                    >
+                        <option value="">All Barangays</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button
+                        id="filter-apply-btn"
+                        class="px-4 py-2 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan text-sm font-semibold hover:bg-neon-cyan/30 transition"
+                    >
+                        Apply Filter
+                    </button>
+                    <button
+                        id="filter-clear-btn"
+                        class="px-4 py-2 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition"
+                    >
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="post-feed" class="space-y-6">
+            <!-- Posts will be loaded here via JavaScript -->
+            <div id="feed-loading" class="text-center py-8">
+                <div class="inline-block">
+                    <div
+                        class="w-8 h-8 border-4 border-neon-cyan/30 border-t-neon-cyan rounded-full animate-spin"
+                    ></div>
+                </div>
+                <p class="text-text-muted mt-4">Loading community feed...</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- User Profile Modal -->
+<div
+    id="user-profile-modal"
+    class="hidden fixed inset-0 z-[70] bg-black/70 backdrop-blur flex items-center justify-center px-4"
+>
+    <div
+        class="glass-card rounded-2xl border border-white/10 max-w-md w-full max-h-[90vh] overflow-y-auto"
+    >
+        <div class="p-6 border-b border-white/10 sticky top-0 bg-inherit z-10">
+            <div class="flex items-center justify-between">
+                <h1 class="text-xl font-semibold text-white">User Profile</h1>
+                <button
+                    id="profile-modal-close"
+                    class="text-text-muted hover:text-white text-2xl"
+                >
+                    &times;
+                </button>
+            </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- Profile Avatar -->
+            <div class="flex flex-col items-center">
+                <div
+                    id="profile-avatar"
+                    class="w-24 h-24 rounded-full bg-gradient-to-br from-neon-cyan/30 to-neon-purple/30 border border-white/10 flex items-center justify-center"
+                >
+                    <span
+                        id="profile-avatar-initial"
+                        class="text-3xl font-bold text-neon-cyan"
+                        >?</span
+                    >
+                </div>
+            </div>
+
+            <!-- Profile Information -->
+            <div class="space-y-4">
+                <div>
+                    <p
+                        class="text-xs text-text-muted uppercase tracking-[0.4em]"
+                    >
+                        Full Name
+                    </p>
+                    <p
+                        id="profile-name"
+                        class="text-white font-semibold text-lg mt-1"
+                    >
+                        Loading...
+                    </p>
+                </div>
+
+                <div>
+                    <p
+                        class="text-xs text-text-muted uppercase tracking-[0.4em]"
+                    >
+                        Email
+                    </p>
+                    <p id="profile-email" class="text-white text-sm mt-1">
+                        Loading...
+                    </p>
+                </div>
+
+                <div>
+                    <p
+                        class="text-xs text-text-muted uppercase tracking-[0.4em]"
+                    >
+                        Phone
+                    </p>
+                    <p id="profile-phone" class="text-white text-sm mt-1">
+                        Loading...
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col space-y-2 pt-4 border-t border-white/10">
+                <button
+                    id="profile-chat-btn"
+                    class="w-full px-4 py-2 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold hover:bg-neon-cyan/30 transition text-sm"
+                >
+                    💬 Start Chat
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        // Community Feed JavaScript - Loads all public posts
+
+        const postFeed = document.getElementById("post-feed");
+        const postFormModal = document.getElementById("post-form-modal");
+        const postContent = document.getElementById("post-content");
+        const postForm = document.getElementById("post-form");
+        const postButton = document.getElementById("post-button");
+        const imagePreviewContainer = document.getElementById(
+            "image-preview-container",
+        );
+        const imagePreviewGrid = document.getElementById("image-preview-grid");
+        const imageInput = document.getElementById("image-input");
+        const photoVideoBtn = document.getElementById("photo-video-btn");
+
+        function formatLocation(value) {
+            if (!value) return "";
+            if (typeof value === "object") {
+                const parts = [
+                    value.province || value.state || "",
+                    value.city || "",
+                    value.barangay || "",
+                    value.address || value.display_name || "",
+                ].filter((part) => part && String(part).trim());
+                return parts.join(", ");
+            }
+            if (typeof value === "string") {
+                try {
+                    const parsed = JSON.parse(value);
+                    if (parsed && typeof parsed === "object") {
+                        return formatLocation(parsed);
+                    }
+                } catch (err) {
+                    // ignore parse error
+                }
+                return value;
+            }
+            return String(value);
+        }
+
+        // Location filter state
+        let currentFilters = {
+            region: "",
+            province: "",
+            city: "",
+            barangay: "",
+        };
+
+        // Load community feed on page load
+        loadCommunityFeed();
+
+        async function loadCommunityFeed(page = 1, filters = {}) {
+            try {
+                const params = new URLSearchParams({
+                    page: page.toString(),
+                    limit: "10",
+                });
+                if (filters.region) params.append("region", filters.region);
+                if (filters.province)
+                    params.append("province", filters.province);
+                if (filters.city) params.append("city", filters.city);
+                if (filters.barangay)
+                    params.append("barangay", filters.barangay);
+
+                const response = await fetch(
+                    `/properties/api/community-feed/?${params.toString()}`,
+                );
+                if (!response.ok) throw new Error("Failed to load feed");
+
+                const data = await response.json();
+
+                if (!data.success) throw new Error(data.error);
+
+                // Clear loading indicator
+                postFeed.innerHTML = "";
+
+                if (data.posts.length === 0) {
+                    postFeed.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="mb-4 text-4xl">📝</div>
+                        <p class="text-white font-semibold text-lg mb-2">No Posts Yet</p>
+                        <p class="text-text-muted mb-6">Be the first to share something with the community!</p>
+                        <p class="text-text-muted text-sm mb-4">As more students and property owners join, you'll see their posts here in real-time.</p>
+                    </div>
+                `;
+                    return;
+                }
+
+                // Render all posts
+                data.posts.forEach((post) => {
+                    const postElement = createPostElement(post);
+                    postFeed.appendChild(postElement);
+                });
+
+                // Add "Load More" button if there are more posts
+                if (data.posts.length >= data.limit) {
+                    const loadMoreBtn = document.createElement("button");
+                    loadMoreBtn.className =
+                        "w-full px-4 py-3 rounded-2xl border border-neon-cyan/30 text-neon-cyan text-sm font-semibold hover:bg-neon-cyan/10 transition";
+                    loadMoreBtn.textContent = "Load More Posts";
+                    loadMoreBtn.onclick = () => {
+                        loadMoreBtn.remove();
+                        loadCommunityFeed(page + 1, currentFilters);
+                    };
+                    postFeed.appendChild(loadMoreBtn);
+                }
+            } catch (error) {
+                console.error("Error loading community feed:", error);
+                postFeed.innerHTML = `
+                <div class="text-center py-8">
+                    <p class="text-red-400">Error loading feed. Please try again.</p>
+                </div>
+            `;
+            }
+        }
+
+        function createPostElement(post) {
+            const article = document.createElement("article");
+            article.className =
+                "glass-card rounded-2xl p-6 border border-white/10 relative";
+            article.dataset.postId = post.id;
+            article.dataset.likes = post.likes;
+            article.dataset.authorId = post.author_id;
+            article.dataset.server = "true";
+            article.dataset.source =
+                post.source ||
+                (post.user_type === "property_owner" ? "property" : "student");
+            try {
+                article.dataset.images = JSON.stringify(post.images || []);
+            } catch (err) {
+                article.dataset.images = "[]";
+            }
+
+            // Match the timestamp style used in the "My Posts" cards
+            const postDate = new Date(post.created_at);
+            const months = [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            ];
+            const month = months[postDate.getMonth()];
+            const day = postDate.getDate();
+            const year = postDate.getFullYear();
+            const hours = String(postDate.getHours()).padStart(2, "0");
+            const minutes = String(postDate.getMinutes()).padStart(2, "0");
+            const formattedTimestamp = `${month} ${day}, ${year} ${hours}:${minutes}`;
+
+            let imagesHtml = "";
+            if (post.images && post.images.length > 0) {
+                let gridColsClass = "sm:grid-cols-2";
+                if (post.images.length === 1) {
+                    gridColsClass = "sm:grid-cols-1";
+                } else if (post.images.length >= 3) {
+                    gridColsClass = "sm:grid-cols-3";
+                }
+                imagesHtml = `
+                <div class="grid grid-cols-2 mt-4 gap-3 ${gridColsClass}">
+                    ${post.images.map((img, idx) => `<img src="${img}" alt="Post image" class="post-media rounded-xl w-full h-40 object-cover border border-white/10 cursor-zoom-in" data-index="${idx}" data-post-id="${post.id}">`).join("")}
+                </div>
+            `;
+            }
+
+            const locationText = formatLocation(post.location);
+            const locationHtml = locationText
+                ? `<p class="text-sm text-text-muted mt-1">📍 ${escapeHtml(locationText)}</p>`
+                : "";
+
+            article.innerHTML = `
+            <!-- Header: Avatar + Author + 3-dots menu (aligned with My Posts card) -->
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-start space-x-3 flex-1">
+                    <!-- Avatar Circle -->
+                    <div class="w-12 h-12 rounded-full bg-neon-cyan/20 border border-neon-cyan/60 flex-shrink-0 flex items-center justify-center text-neon-cyan font-bold text-sm overflow-hidden">
+                        ${post.author_profile_picture ? `<img src="${post.author_profile_picture}" alt="${post.author_name || "User"}" class="w-full h-full object-cover">` : (post.author_name || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <!-- Author Info -->
+                    <div class="flex-1">
+                        <p class="text-white font-medium">${escapeHtml(post.author_name)}</p>
+                        ${locationHtml}
+                        <p class="text-xs text-text-muted mt-1">${formattedTimestamp}</p>
+                    </div>
+                </div>
+                <!-- 3-Dots Menu intentionally hidden on community feed -->
+            </div>
+            <!-- Message -->
+            <p class="text-text-muted mt-4 text-sm">${linkifyText(post.message)}</p>
+            <!-- Images Grid -->
+            ${imagesHtml}
+            <!-- Actions: Heart + Comments -->
+            <div class="flex items-center justify-between mt-4 text-sm text-text-muted">
+                <button class="like-btn flex items-center space-x-2 ${post.liked ? "text-red-500" : "text-text-muted hover:text-red-500"}" data-post-id="${post.id}" data-liked="${post.liked ? "true" : "false"}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="${post.liked ? "currentColor" : "none"}" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    <span class="like-count">${post.likes || 0}</span>
+                </button>
+                <button class="comments-btn text-xs text-text-muted hover:text-neon-cyan transition" data-post-id="${post.id}">
+                    Comments (${post.comments_count || 0})
+                </button>
+            </div>
+        `;
+
+            return article;
+        }
+
+        // Modal and form handlers (same as before)
+        const postModalClose = document.getElementById("post-modal-close");
+        const cancelCreateForm = document.getElementById("cancel-create-form");
+
+        document
+            .querySelector('[data-panel="posts"]')
+            ?.addEventListener("click", (e) => {
+                if (e.target.textContent === "Create Post") {
+                    postFormModal.classList.remove("hidden");
+                }
+            });
+
+        postModalClose?.addEventListener("click", closeCreateForm);
+        cancelCreateForm?.addEventListener("click", closeCreateForm);
+
+        photoVideoBtn?.addEventListener("click", () => imageInput?.click());
+        imageInput?.addEventListener("change", (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach((file) => {
+                const key = Date.now() + Math.random();
+                selectedFiles.push({ file, key });
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const div = document.createElement("div");
+                    div.className = "relative group";
+                    div.dataset.key = key;
+                    div.innerHTML = `
+                    <img src="${ev.target.result}" alt="Preview" class="rounded-xl w-full h-20 object-cover border border-white/10">
+                    <button type="button" class="remove-image absolute top-1 right-1 bg-red-500/80 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition" data-key="${key}">Remove</button>
+                `;
+                    imagePreviewGrid.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+            imagePreviewContainer.classList.remove("hidden");
+            e.target.value = "";
+        });
+
+        let selectedFiles = [];
+
+        postForm?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const content = postContent.value.trim();
+            if (!content && selectedFiles.length === 0) return;
+
+            postButton.disabled = true;
+            const formData = new FormData();
+            formData.append("content", content);
+            selectedFiles.forEach((f) => formData.append("images", f.file));
+
+            try {
+                const res = await fetch("/properties/api/create-post/", {
+                    method: "POST",
+                    headers: { "X-CSRFToken": getCsrfToken() },
+                    body: formData,
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        closeCreateForm();
+                        loadCommunityFeed(); // Reload feed to show new post
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                postButton.disabled = false;
+            }
+        });
+
+        // User profile modal handler
+        const userProfileModal = document.getElementById("user-profile-modal");
+        const profileModalClose = document.getElementById(
+            "profile-modal-close",
+        );
+        profileModalClose?.addEventListener("click", () =>
+            userProfileModal?.classList.add("hidden"),
+        );
+
+        postFeed?.addEventListener("click", (e) => {
+            if (e.target.classList.contains("post-author-name")) {
+                const userId = e.target.dataset.userId;
+                const menu = e.target
+                    .closest(".relative")
+                    ?.querySelector(".post-author-menu");
+                if (menu) menu.classList.toggle("hidden");
+            }
+
+            if (e.target.classList.contains("view-profile-action")) {
+                const userId = e.target.dataset.userId;
+                loadUserProfile(userId);
+                userProfileModal?.classList.remove("hidden");
+            }
+
+            if (e.target.classList.contains("start-chat-action")) {
+                const userId = e.target.dataset.userId;
+                window.location.href = `/properties/messenger/?user_id=${userId}`;
+            }
+        });
+
+        async function loadUserProfile(userId) {
+            try {
+                const response = await fetch(`/properties/api/user/${userId}/`);
+                if (!response.ok) throw new Error("Failed to load profile");
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById("profile-name").textContent =
+                        data.user.full_name || "N/A";
+                    document.getElementById("profile-email").textContent =
+                        data.user.email || "N/A";
+                    document.getElementById("profile-phone").textContent =
+                        data.user.phone || "N/A";
+                    document.getElementById(
+                        "profile-avatar-initial",
+                    ).textContent = (data.user.full_name ||
+                        "?")[0].toUpperCase();
+
+                    document.getElementById("profile-chat-btn").onclick =
+                        () => {
+                            window.location.href = `/properties/messenger/?user_id=${userId}`;
+                        };
+                }
+            } catch (error) {
+                console.error("Error loading profile:", error);
+            }
+        }
+
+        function closeCreateForm() {
+            postContent.value = "";
+            selectedFiles = [];
+            imagePreviewGrid.innerHTML = "";
+            imagePreviewContainer.classList.add("hidden");
+            postFormModal.classList.add("hidden");
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return String(str).replace(
+                /[&<>"']/g,
+                (m) =>
+                    ({
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        '"': "&quot;",
+                        "'": "&#39;",
+                    })[m],
+            );
+        }
+
+        function linkifyText(text) {
+            if (!text) return "";
+            return escapeHtml(text).replace(
+                /(https?:\/\/[^\s]+)/g,
+                '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">$1</a>',
+            );
+        }
+
+        function getCsrfToken() {
+            return (
+                document.querySelector("[name=csrfmiddlewaretoken]")?.value ||
+                ""
+            );
+        }
+
+        // Location filter handlers
+        const filterRegion = document.getElementById("filter-region");
+        const filterProvince = document.getElementById("filter-province");
+        const filterCity = document.getElementById("filter-city");
+        const filterBarangay = document.getElementById("filter-barangay");
+        const filterApplyBtn = document.getElementById("filter-apply-btn");
+        const filterClearBtn = document.getElementById("filter-clear-btn");
+        let currentFilters = {
+            region: "",
+            province: "",
+            city: "",
+            barangay: "",
+        };
+
+        if (filterApplyBtn) {
+            filterApplyBtn.addEventListener("click", () => {
+                currentFilters = {
+                    region: filterRegion?.value || "",
+                    province: filterProvince?.value || "",
+                    city: filterCity?.value || "",
+                    barangay: filterBarangay?.value || "",
+                };
+                loadCommunityFeed(1, currentFilters);
+            });
+        }
+
+        if (filterClearBtn) {
+            filterClearBtn.addEventListener("click", () => {
+                currentFilters = {
+                    region: "",
+                    province: "",
+                    city: "",
+                    barangay: "",
+                };
+                if (filterRegion) filterRegion.value = "";
+                if (filterProvince) filterProvince.value = "";
+                if (filterCity) filterCity.value = "";
+                if (filterBarangay) filterBarangay.value = "";
+                loadCommunityFeed(1, currentFilters);
+            });
+        }
+
+        // Initialize location filters with Caraga region data
+        const locationData = {
+            "Caraga (Region XIII)": {
+                "Agusan del Norte": {
+                    "Butuan City": [
+                        "Ampayon",
+                        "Anticala",
+                        "Baan",
+                        "Bancasi",
+                        "Banza",
+                        "Basag",
+                        "Bitan-agan",
+                        "Buenavista",
+                        "Libertad",
+                        "Los Angeles",
+                        "Mahogany",
+                        "Masao",
+                        "Port Puyod",
+                        "San Mateo",
+                        "Taguibo",
+                    ],
+                    "Cabadbaran City": [
+                        "Barangay 1",
+                        "Barangay 2",
+                        "Barangay 3",
+                        "Barangay 4",
+                        "Concepcion",
+                        "Del Pilar",
+                        "Katipunan",
+                        "Mabini",
+                        "Mahaba",
+                        "New Pandan",
+                        "Poblacion",
+                        "San Jose",
+                        "Soriano",
+                        "Tolosa",
+                        "Villa Kananga",
+                    ],
+                    Carmen: [
+                        "Poblacion",
+                        "Gosoon",
+                        "Tagbuyawan",
+                        "Upper Olave",
+                        "Cahayag",
+                    ],
+                    Jabonga: [
+                        "Poblacion",
+                        "Caasinan",
+                        "Magkalungay",
+                        "San Vicente",
+                        "Tagbina",
+                    ],
+                    Kitcharao: [
+                        "Poblacion",
+                        "Anahawan",
+                        "Hinimbangan",
+                        "Magsaysay",
+                        "San Isidro",
+                    ],
+                    "Las Nieves": [
+                        "Poblacion",
+                        "San Roque",
+                        "Santo Rosario",
+                        "Ambago",
+                        "Anislagan",
+                        "Aurora",
+                        "Golden Valley",
+                        "Magkalungay",
+                        "San Jose",
+                        "San Vicente",
+                        "Tagbuyawan",
+                    ],
+                    Magallanes: [
+                        "Poblacion",
+                        "Tagbuyawan",
+                        "Magsaysay",
+                        "Anislagan",
+                        "Bunawan",
+                        "Doña Flavia",
+                        "San Isidro",
+                        "San Jose",
+                        "Tagbina",
+                        "Upper Olave",
+                    ],
+                    Nasipit: [
+                        "Poblacion",
+                        "Cahayagan",
+                        "Taguibo",
+                        "Camagong",
+                        "Cantugas",
+                        "Dayawan",
+                        "San Roque",
+                        "Tagbuyawan",
+                    ],
+                    Santiago: [
+                        "Poblacion",
+                        "Mabuhay",
+                        "San Antonio",
+                        "Santa Ana",
+                        "Tagbubunga",
+                        "Tagbina",
+                        "Upper Olave",
+                    ],
+                    Tubay: [
+                        "Poblacion",
+                        "Tag-olo",
+                        "San Vicente",
+                        "San Roque",
+                        "Tagbina",
+                    ],
+                },
+                "Agusan del Sur": {
+                    "Bayugan City": [
+                        "Poblacion 1",
+                        "Poblacion 2",
+                        "Poblacion 3",
+                        "Anahaw",
+                        "Aurora",
+                        "Bobonawan",
+                        "Bucac",
+                        "Bugac",
+                        "Joy",
+                        "Katipunan",
+                        "Maygatasan",
+                        "Monteclaro",
+                        "Sagua",
+                        "Santo Rosario",
+                        "Taglatawan",
+                    ],
+                    Bunawan: [
+                        "Poblacion",
+                        "Consuelo",
+                        "Libertad",
+                        "San Teodoro",
+                        "Villa Mercedes",
+                    ],
+                    Esperanza: [
+                        "Poblacion",
+                        "Aurora",
+                        "Bayugan",
+                        "Gomez",
+                        "Kasapa",
+                        "La Paz",
+                        "Libertad",
+                        "Mahagsay",
+                    ],
+                    "La Paz": [
+                        "Poblacion",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                        "Kasapa",
+                        "Libertad",
+                        "Mahagsay",
+                    ],
+                    Loreto: [
+                        "Poblacion",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                        "Kasapa",
+                        "La Paz",
+                    ],
+                    Prosperidad: [
+                        "Poblacion",
+                        "San Teodoro",
+                        "Villa Mercedes",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                        "Kasapa",
+                        "La Paz",
+                        "Libertad",
+                        "Mahagsay",
+                    ],
+                    Rosario: [
+                        "Poblacion",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                        "Kasapa",
+                        "La Paz",
+                    ],
+                    "San Francisco": [
+                        "Poblacion",
+                        "Alegria",
+                        "Ebro",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                    ],
+                    "San Luis": [
+                        "Poblacion",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                        "Kasapa",
+                        "La Paz",
+                    ],
+                    "Santa Josefa": [
+                        "Poblacion",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                        "Kasapa",
+                    ],
+                    Sibagat: [
+                        "Poblacion",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                        "Kasapa",
+                        "La Paz",
+                    ],
+                    Talacogon: [
+                        "Poblacion",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                        "Kasapa",
+                    ],
+                    Trento: [
+                        "Poblacion",
+                        "Mat-i",
+                        "Mahagsay",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                    ],
+                    Veruela: [
+                        "Poblacion",
+                        "Aurora",
+                        "Bayugan",
+                        "Esperanza",
+                        "Gomez",
+                        "Kasapa",
+                        "La Paz",
+                    ],
+                },
+                "Surigao del Norte": {
+                    "Surigao City": [
+                        "Poblacion 1",
+                        "Poblacion 2",
+                        "Poblacion 3",
+                        "Alang-alang",
+                        "Anomar",
+                        "Buenavista",
+                        "Canlanipa",
+                        "Ipil",
+                        "Lipata",
+                        "Luna",
+                        "Mabua",
+                        "Mapawa",
+                        "San Juan",
+                        "Taft",
+                        "Washington",
+                    ],
+                    Alegria: [
+                        "Poblacion",
+                        "Budlingin",
+                        "Magsaysay",
+                        "Alang-alang",
+                        "Anomar",
+                        "Buenavista",
+                        "Canlanipa",
+                        "Ipil",
+                    ],
+                    Bacuag: [
+                        "Poblacion",
+                        "Bita",
+                        "Camangahan",
+                        "Canlapig",
+                        "Cubay",
+                        "Gugo",
+                        "Kuguon",
+                        "Lagasan",
+                        "Lapulapu",
+                        "Lawaan",
+                    ],
+                    Claver: [
+                        "Poblacion",
+                        "Imbang",
+                        "Malinao",
+                        "San Carlos",
+                        "Banibaniahan",
+                        "Bugta",
+                        "Camarines",
+                        "Catadman",
+                        "Daanlungsod",
+                        "Garing",
+                    ],
+                    Dapa: [
+                        "Poblacion",
+                        "Cabraran",
+                        "Cantaan",
+                        "Catubig",
+                        "Caub",
+                        "Dacucut",
+                        "Darogsanan",
+                        "Garing",
+                        "San Isidro",
+                    ],
+                    "Del Carmen": [
+                        "Poblacion",
+                        "Binanga",
+                        "Bohayan",
+                        "Bogtukan",
+                        "Bugaon",
+                        "Cahaguangan",
+                        "Caltian",
+                        "Camalig",
+                        "Camantayan",
+                    ],
+                    "General Luna": [
+                        "Poblacion",
+                        "Agsam",
+                        "Batang",
+                        "Binuangan",
+                        "Cabug-Cabug",
+                        "Cabunian",
+                        "Cacutud",
+                        "Caducan",
+                        "Cahayag",
+                    ],
+                    Gigaquit: [
+                        "Poblacion",
+                        "Balangkas",
+                        "Baliwasan",
+                        "Balsanad",
+                        "Baluy",
+                        "Bambuyan",
+                        "Bandahon",
+                        "Bandag",
+                        "Bangagan",
+                    ],
+                    Mainit: [
+                        "Poblacion",
+                        "Balangbalang",
+                        "Balatayan",
+                        "Balikatbayan",
+                        "Baliling",
+                        "Balindong",
+                        "Balintang",
+                        "Balitigon",
+                    ],
+                    Malimono: [
+                        "Poblacion",
+                        "Balite",
+                        "Langbit",
+                        "Magpapit",
+                        "Maligaya",
+                        "Masaon",
+                        "Mataba",
+                        "Platero",
+                        "Sulop",
+                    ],
+                    Placer: [
+                        "Poblacion",
+                        "Esperanza",
+                        "Ipil",
+                        "Abuyon",
+                        "Aguon",
+                        "Alacdang",
+                        "Alacuan",
+                        "Alampay",
+                    ],
+                    "San Benito": [
+                        "Poblacion",
+                        "Hanagdong",
+                        "Lahi",
+                        "Esperanza",
+                        "San Roque",
+                    ],
+                    "San Francisco": [
+                        "Poblacion",
+                        "Anomar",
+                        "Capalawan",
+                        "Esperanza",
+                    ],
+                    "San Isidro": [
+                        "Poblacion",
+                        "Danhawan",
+                        "Esperanza",
+                        "San Roque",
+                    ],
+                    "Santa Monica": [
+                        "Poblacion",
+                        "Buenavista",
+                        "Hanagdong",
+                        "San Roque",
+                    ],
+                    Sison: ["Poblacion", "Anomar", "Capalawan", "San Roque"],
+                    Socorro: ["Poblacion", "Navarro", "Rizal", "San Roque"],
+                    "Tagana-an": [
+                        "Poblacion",
+                        "Urbiztondo",
+                        "San Roque",
+                        "Esperanza",
+                    ],
+                    Tubod: ["Poblacion", "Anomar", "Capalawan", "San Roque"],
+                },
+                "Surigao del Sur": {
+                    "Tandag City": [
+                        "Poblacion",
+                        "Awasian",
+                        "Bongtud",
+                        "Buenavista",
+                        "Dagocdoc",
+                        "Libas",
+                        "Mabua",
+                        "Pandanon",
+                        "San Agustin I",
+                        "San Agustin II",
+                        "San Antonio",
+                        "San Isidro",
+                        "San Roque",
+                        "Sindaton",
+                        "Telaje",
+                    ],
+                    "Bislig City": [
+                        "Poblacion",
+                        "Adlay",
+                        "Coleto",
+                        "Fortaliza",
+                        "Lawigan",
+                        "Mangagoy",
+                        "Pamaypayan",
+                        "San Fernando",
+                        "San Isidro",
+                        "San Vicente",
+                        "Sibaroy",
+                        "Tabon",
+                        "Villa Paz",
+                    ],
+                    Adlay: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kasapa1an",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                        "Upper Ulian",
+                    ],
+                    Barobo: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Bayabas: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "Mahayahay",
+                        "New Tubigon",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Cagwait: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Cantilan: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Carmen: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Carrascal: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Cortes: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Hinatuan: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Lanuza: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Lianga: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Lingig: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Madrid: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Marihatag: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    "San Agustin": [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    "San Miguel": [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Tagbina: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                    Tago: [
+                        "Poblacion",
+                        "Amaga",
+                        "Daku",
+                        "Kahayag",
+                        "Kapatagan",
+                        "Lanuza",
+                        "San Roque",
+                        "Sindangan",
+                    ],
+                },
+                "Dinagat Islands": {
+                    "San Jose": [
+                        "Poblacion",
+                        "Aurelio",
+                        "Boa",
+                        "Don Ruben E. Ecleo Sr.",
+                        "Justiniana Edera",
+                        "Lake Bababu",
+                        "Mabini",
+                        "San Juan",
+                        "San Pedro",
+                        "Santa Cruz",
+                        "Santa Rita",
+                        "Villa San Antonio",
+                    ],
+                    Basilisa: [
+                        "Poblacion",
+                        "Benglen",
+                        "Boa",
+                        "Don Ruben E. Ecleo Sr.",
+                        "Justiniana Edera",
+                        "Lake Bababu",
+                        "Mabini",
+                        "San Juan",
+                        "San Pedro",
+                        "Santa Cruz",
+                        "Santa Rita",
+                        "Villa San Antonio",
+                    ],
+                    Cagdianao: [
+                        "Poblacion",
+                        "New Mainit",
+                        "Villa Real",
+                        "Boa",
+                        "Don Ruben E. Ecleo Sr.",
+                        "Justiniana Edera",
+                        "Lake Bababu",
+                        "Mabini",
+                        "San Juan",
+                        "San Pedro",
+                        "Santa Cruz",
+                        "Santa Rita",
+                    ],
+                    Dinagat: [
+                        "Poblacion",
+                        "Ecija",
+                        "San Juan",
+                        "Boa",
+                        "Don Ruben E. Ecleo Sr.",
+                        "Justiniana Edera",
+                        "Lake Bababu",
+                        "Mabini",
+                        "San Pedro",
+                        "Santa Cruz",
+                        "Santa Rita",
+                        "Villa San Antonio",
+                    ],
+                    Libjo: [
+                        "Poblacion",
+                        "Boa",
+                        "Don Ruben E. Ecleo Sr.",
+                        "Justiniana Edera",
+                        "Lake Bababu",
+                        "Mabini",
+                        "San Juan",
+                        "San Pedro",
+                        "Santa Cruz",
+                        "Santa Rita",
+                        "Villa San Antonio",
+                    ],
+                    Loreto: [
+                        "Poblacion",
+                        "Boa",
+                        "Don Ruben E. Ecleo Sr.",
+                        "Justiniana Edera",
+                        "Lake Bababu",
+                        "Mabini",
+                        "San Juan",
+                        "San Pedro",
+                        "Santa Cruz",
+                        "Santa Rita",
+                        "Villa San Antonio",
+                    ],
+                    Tubajon: [
+                        "Poblacion",
+                        "Boa",
+                        "Don Ruben E. Ecleo Sr.",
+                        "Justiniana Edera",
+                        "Lake Bababu",
+                        "Mabini",
+                        "San Juan",
+                        "San Pedro",
+                        "Santa Cruz",
+                        "Santa Rita",
+                        "Villa San Antonio",
+                    ],
+                },
+            },
+        };
+
+        // Populate location filters
+        if (filterRegion) {
+            filterRegion.addEventListener("change", function () {
+                const selectedRegion = this.value;
+                populateProvinces(selectedRegion);
+                clearLocationSelections(["province", "city", "barangay"]);
+            });
+        }
+
+        if (filterProvince) {
+            filterProvince.addEventListener("change", function () {
+                const selectedRegion = filterRegion.value;
+                const selectedProvince = this.value;
+                populateCities(selectedRegion, selectedProvince);
+                clearLocationSelections(["city", "barangay"]);
+            });
+        }
+
+        if (filterCity) {
+            filterCity.addEventListener("change", function () {
+                const selectedRegion = filterRegion.value;
+                const selectedProvince = filterProvince.value;
+                const selectedCity = this.value;
+                populateBarangays(
+                    selectedRegion,
+                    selectedProvince,
+                    selectedCity,
+                );
+                clearLocationSelections(["barangay"]);
+            });
+        }
+
+        function populateProvinces(region) {
+            if (!filterProvince) return;
+            filterProvince.innerHTML =
+                '<option value="">All Provinces</option>';
+            if (region && locationData[region]) {
+                Object.keys(locationData[region]).forEach((province) => {
+                    const option = document.createElement("option");
+                    option.value = province;
+                    option.textContent = province;
+                    filterProvince.appendChild(option);
+                });
+            }
+        }
+
+        function populateCities(region, province) {
+            if (!filterCity) return;
+            filterCity.innerHTML =
+                '<option value="">All Cities/Municipalities</option>';
+            if (
+                region &&
+                province &&
+                locationData[region] &&
+                locationData[region][province]
+            ) {
+                Object.keys(locationData[region][province]).forEach((city) => {
+                    const option = document.createElement("option");
+                    option.value = city;
+                    option.textContent = city;
+                    filterCity.appendChild(option);
+                });
+            }
+        }
+
+        function populateBarangays(region, province, city) {
+            if (!filterBarangay) return;
+            filterBarangay.innerHTML =
+                '<option value="">All Barangays</option>';
+            if (
+                region &&
+                province &&
+                city &&
+                locationData[region] &&
+                locationData[region][province] &&
+                locationData[region][province][city]
+            ) {
+                locationData[region][province][city].forEach((barangay) => {
+                    const option = document.createElement("option");
+                    option.value = barangay;
+                    option.textContent = barangay;
+                    filterBarangay.appendChild(option);
+                });
+            }
+        }
+
+        function clearLocationSelections(types) {
+            types.forEach((type) => {
+                if (type === "province" && filterProvince) {
+                    filterProvince.innerHTML =
+                        '<option value="">All Provinces</option>';
+                } else if (type === "city" && filterCity) {
+                    filterCity.innerHTML =
+                        '<option value="">All Cities/Municipalities</option>';
+                } else if (type === "barangay" && filterBarangay) {
+                    filterBarangay.innerHTML =
+                        '<option value="">All Barangays</option>';
+                }
+            });
+        }
+    })();
+</script>

@@ -1,0 +1,1048 @@
+<!--
+templates/students/partials/my_home_posts.html
+-->
+
+<div class="myhome-panel" data-panel="posts">
+    <div id="post-feed" class="post-feed space-y-6">
+        {% for post in owner_posts %}
+            {% include "students/partials/post_card.html" with post=post %}
+        {% empty %}
+            <div id="example-posts" class="space-y-6"></div>
+        {% endfor %}
+    </div>
+    
+    <!-- Comments Modal (same structure as property dashboard) -->
+    <div id="comments-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4">
+        <div class="glass-card rounded-2xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-white/10 sticky top-0 bg-inherit z-10">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-xl font-semibold text-white">Comments</h1>
+                    <button id="comments-modal-close" class="text-text-muted hover:text-white text-2xl">&times;</button>
+                </div>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- Post content section -->
+                <div id="comments-post-content"></div>
+                
+                <!-- Comments section -->
+                <div class="border-t border-white/10 pt-6">
+                    <h2 class="text-sm font-semibold text-white mb-4">Comments</h2>
+                    <div id="comments-list" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    // ===== UNIFIED POST MANAGEMENT FOR STUDENT DASHBOARD =====
+    // This implementation mirrors the property dashboard for 100% uniformity
+    
+    // Global example posts data
+    function createExamplePosts() {
+        const example1LikedBy = JSON.parse(localStorage.getItem('example_liked_by_example-1') || '[]');
+        const example2LikedBy = JSON.parse(localStorage.getItem('example_liked_by_example-2') || '[]');
+        const userId = getUserId();
+        
+        const example1Likes = parseInt(localStorage.getItem('example_likes_example-1') || '47');
+        const example2Likes = parseInt(localStorage.getItem('example_likes_example-2') || '31');
+        
+        return [
+            {
+                id: 'example-1',
+                userId: 'example',
+                userInitial: getUserInitial(),
+                content: 'Fully furnished boarding house with modern amenities. Perfect for students looking for a comfortable and secure place to stay. Includes WiFi, study areas, and 24/7 security.',
+                location: 'Sampaloc, Manila',
+                images: [
+                    'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=60',
+                    'https://images.unsplash.com/photo-1484101403633-562f891dc89a?auto=format&fit=crop&w=900&q=60'
+                ],
+                timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
+                likes: example1Likes,
+                likedBy: example1LikedBy,
+                comments: [
+                    { id: 'c1', author: 'Student', text: 'Is the rate inclusive of utilities?', timestamp: new Date(Date.now() - 3600000).toISOString(), replies: [], likes: 0, likedBy: [] }
+                ],
+                isExample: true
+            },
+            {
+                id: 'example-2',
+                userId: 'example',
+                userInitial: getUserInitial(),
+                content: 'Spacious rooms available near university belt. Features include air conditioning, private bathrooms, and study desks. Perfect for students who value comfort and convenience.',
+                location: 'España, Manila',
+                images: [
+                    'https://images.unsplash.com/photo-1494145904049-0dca59b4bbad?auto=format&fit=crop&w=900&q=60',
+                    'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=60'
+                ],
+                timestamp: new Date(Date.now() - 6 * 3600000).toISOString(),
+                likes: example2Likes,
+                likedBy: example2LikedBy,
+                comments: [
+                    { id: 'c2', author: 'Student', text: 'Need one slot for December intake!', timestamp: new Date(Date.now() - 4 * 3600000).toISOString(), replies: [], likes: 0, likedBy: [] }
+                ],
+                isExample: true
+            }
+        ];
+    }
+    
+    // Global variables
+    let currentViewerImages = [];
+    let currentViewerIndex = 0;
+    
+    // Get current user info
+    function getUserId() {
+        return '{{ user.id|default:"user_"|escapejs }}';
+    }
+    
+    function getUserInitial() {
+        return '{{ user.first_name|default:user.username|slice:":1"|upper|escapejs }}';
+    }
+    
+    function getUserName() {
+        return '{{ user.get_full_name|default:user.username|escapejs }}';
+    }
+    
+    let currentViewerImages = [];
+    let currentViewerIndex = 0;
+    
+    // Helper functions - matching property dashboard
+    function getPhilippinesTime(timestamp) {
+        const date = timestamp ? new Date(timestamp) : new Date();
+        const phTime = new Date(date.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+        const dateStr = phTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = phTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        return { date: dateStr, time: timeStr, full: `${dateStr} ${timeStr}` };
+    }
+
+    function formatRelativeTime(timestamp) {
+        const now = new Date();
+        const postTime = new Date(timestamp);
+        const diffMs = now - postTime;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return getPhilippinesTime(timestamp).full;
+    }
+
+    function escapeHtml(value = '') {
+        const HTML_ESCAPE_LOOKUP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return String(value).replace(/[&<>"']/g, (char) => HTML_ESCAPE_LOOKUP[char] || char);
+    }
+
+    function linkifyText(text) {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return escapeHtml(text).replace(urlRegex, (url) => {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">${url}</a>`;
+        });
+    }
+
+    function getUserAvatarHtml(size = 'w-10 h-10', showInitial = true) {
+        const userId = getUserId();
+        const profileStateKey = `student_profile_settings_${userId}`;
+        let photo = null;
+        try {
+            const profileState = JSON.parse(localStorage.getItem(profileStateKey) || '{}');
+            photo = profileState.photo || null;
+        } catch (err) {
+            console.warn('Could not parse profile state');
+        }
+        
+        const initial = getUserInitial();
+        const name = getUserName();
+        
+        if (photo) {
+            return `<div class="relative ${size} flex-shrink-0">
+                <img src="${photo}" alt="${name}" class="${size} rounded-full border border-neon-cyan/60 object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                <div class="${size} rounded-full bg-neon-cyan/20 border border-neon-cyan/60 flex items-center justify-center text-neon-cyan font-bold hidden">${initial}</div>
+            </div>`;
+        } else {
+            return `<div class="${size} rounded-full bg-neon-cyan/20 border border-neon-cyan/60 flex-shrink-0 flex items-center justify-center text-neon-cyan font-bold">${initial}</div>`;
+        }
+    }
+
+    // OpenImageViewer - matches property dashboard implementation with video support
+    async function openImageViewer(postId, startIndex = 0) {
+        const modal = document.getElementById('image-viewer-modal');
+        const img = document.getElementById('image-viewer-img');
+        const video = document.getElementById('image-viewer-video');
+        const counter = document.getElementById('image-viewer-counter');
+        
+        const examplePosts = createExamplePosts();
+        let post = examplePosts.find(p => p.id === postId);
+        if (!post || !post.images || post.images.length === 0) return;
+        
+        currentViewerImages = post.images;
+        currentViewerIndex = startIndex;
+        
+        function showMedia(index) {
+            const mediaUrl = currentViewerImages[index];
+            const isVideo = typeof mediaUrl === 'string' && (mediaUrl.includes('.mp4') || mediaUrl.includes('video'));
+            
+            if (isVideo) {
+                img.classList.add('hidden');
+                video.classList.remove('hidden');
+                video.src = mediaUrl;
+            } else {
+                video.classList.add('hidden');
+                img.classList.remove('hidden');
+                img.src = mediaUrl;
+            }
+            
+            counter.textContent = `${index + 1} / ${currentViewerImages.length}`;
+        }
+        
+        showMedia(startIndex);
+        
+        const nextBtn = document.getElementById('image-viewer-next');
+        const prevBtn = document.getElementById('image-viewer-prev');
+        const closeBtn = document.getElementById('image-viewer-close');
+        
+        if (nextBtn) {
+            nextBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                currentViewerIndex = (currentViewerIndex + 1) % currentViewerImages.length;
+                showMedia(currentViewerIndex);
+            };
+        }
+        
+        if (prevBtn) {
+            prevBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                currentViewerIndex = (currentViewerIndex - 1 + currentViewerImages.length) % currentViewerImages.length;
+                showMedia(currentViewerIndex);
+            };
+        }
+        
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                modal.classList.add('hidden');
+            };
+        }
+        
+        // Touch support for swipe navigation
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        img.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        img.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchEndX < touchStartX - 50) {
+                currentViewerIndex = (currentViewerIndex + 1) % currentViewerImages.length;
+                showMedia(currentViewerIndex);
+            }
+            if (touchEndX > touchStartX + 50) {
+                currentViewerIndex = (currentViewerIndex - 1 + currentViewerImages.length) % currentViewerImages.length;
+                showMedia(currentViewerIndex);
+            }
+        });
+        
+        modal.classList.remove('hidden');
+    }
+
+    // OpenCommentsModal - matches property dashboard structure 100%
+    async function openCommentsModal(postId) {
+        const modal = document.getElementById('comments-modal');
+        const commentsList = document.getElementById('comments-list');
+        const commentsForm = document.getElementById('comments-form');
+        
+        const examplePosts = createExamplePosts();
+        const post = examplePosts.find(p => p.id === postId);
+        if (!post) return;
+        
+        displayComments(post, commentsList, commentsForm, modal, true);
+    }
+
+    function displayComments(post, commentsList, commentsForm, modal, isExample) {
+        // Display post content in modal
+        const postContentDiv = document.getElementById('comments-post-content');
+        const phTime = getPhilippinesTime(post.timestamp);
+        let locationHtml = '';
+        if (post.location) {
+            if (typeof post.location === 'object' && post.location !== null) {
+                const province = post.location.province || '';
+                const city = post.location.city || '';
+                const barangay = post.location.barangay || '';
+                const address = post.location.address || '';
+                const parts = [province, city, barangay, address].filter(p => p && String(p).trim());
+                if (parts.length) {
+                    locationHtml = `<p class="text-xs text-text-muted mt-1">📍 ${escapeHtml(parts.join(', '))}</p>`;
+                }
+            } else {
+                locationHtml = `<p class="text-xs text-text-muted mt-1">📍 ${escapeHtml(String(post.location))}</p>`;
+            }
+        }
+        
+        let imagesHtml = '';
+        if (post.images && post.images.length > 0) {
+            let gridColsClass = 'sm:grid-cols-2';
+            if (post.images.length === 1) {
+                gridColsClass = 'sm:grid-cols-1';
+            } else if (post.images.length >= 3) {
+                gridColsClass = 'sm:grid-cols-3';
+            }
+            const mediaItems = post.images.map((img, idx) => {
+                const isVideo = typeof img === 'string' && (img.includes('.mp4') || img.includes('video'));
+                if (isVideo) {
+                    return `<video src="${img}" class="comments-modal-media rounded-xl w-full h-40 object-cover border border-white/10 cursor-pointer" data-index="${idx}" data-post-id="${post.id}" controls></video>`;
+                } else {
+                    return `<img src="${img}" class="comments-modal-media rounded-xl w-full h-40 object-cover border border-white/10 cursor-pointer" data-index="${idx}" data-post-id="${post.id}" alt="Post image">`;
+                }
+            }).join('');
+            imagesHtml = `<div class="grid grid-cols-2 mt-4 gap-3 ${gridColsClass}">${mediaItems}</div>`;
+        }
+        
+        postContentDiv.innerHTML = `
+            <div class="flex items-start space-x-3">
+                ${getUserAvatarHtml('w-10 h-10', true)}
+                <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-white font-medium post-author-name">${post.userName || getUserName()}</p>
+                            ${locationHtml}
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-text-muted">${phTime.date}</p>
+                            <p class="text-xs text-text-muted">${phTime.time}</p>
+                        </div>
+                    </div>
+                    <p class="text-text-muted mt-3 text-sm">${post.content}</p>
+                    ${imagesHtml}
+                </div>
+            </div>
+        `;
+        
+        // Make images in comments modal clickable - CRITICAL FIX
+        setTimeout(() => {
+            postContentDiv.querySelectorAll('.comments-modal-media').forEach((media) => {
+                const idx = parseInt(media.dataset.index);
+                media.addEventListener('click', () => {
+                    openImageViewer(post.id, idx);
+                });
+            });
+        }, 100);
+        
+        // Display comments with reply buttons
+        commentsList.innerHTML = '';
+
+        function ensureReactionFields(target) {
+            if (typeof target.likes !== 'number') target.likes = 0;
+            if (!Array.isArray(target.likedBy)) target.likedBy = [];
+        }
+        
+        if (post.comments && post.comments.length > 0) {
+            post.comments.forEach(comment => {
+                const commentDiv = document.createElement('div');
+                commentDiv.className = 'rounded-2xl bg-white/5 border border-white/10 p-3';
+                
+                const commentDate = new Date();
+                const formattedDate = commentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const formattedTime = commentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const commentInitial = comment.author ? comment.author.charAt(0).toUpperCase() : 'U';
+                
+                const avatarHtml = `<div class="w-8 h-8 rounded-full bg-neon-cyan/20 border border-neon-cyan/60 flex-shrink-0 flex items-center justify-center text-neon-cyan font-bold text-sm">${commentInitial}</div>`;
+                
+                commentDiv.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            ${avatarHtml}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-semibold text-white">${escapeHtml(comment.author)}</span>
+                                    <span class="text-xs text-text-muted">${formattedDate} at ${formattedTime}</span>
+                                    <span class="text-xs text-text-muted">• ${formatRelativeTime(comment.timestamp || new Date().toISOString())}</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-white mt-1">${escapeHtml(comment.text)}</p>
+                            <div class="flex items-center space-x-3 mt-2">
+                                <button class="comment-like-btn flex items-center space-x-1 text-text-muted hover:text-red-500 text-xs" data-comment-id="${comment.id}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                    <span class="comment-like-count">0</span>
+                                </button>
+                                <button class="reply-btn text-xs text-neon-cyan hover:underline" data-comment-id="${comment.id}">Reply</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                commentsList.appendChild(commentDiv);
+            });
+        } else {
+            commentsList.innerHTML = '<p class="text-sm text-text-muted text-center py-4">No comments yet. Be the first to comment!</p>';
+        }
+        
+        const modal_elem = document.getElementById('comments-modal');
+        modal_elem.classList.remove('hidden');
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const exampleContainer = document.getElementById('example-posts');
+        if (!exampleContainer || exampleContainer.innerHTML.trim()) return;
+        
+        const examplePosts = createExamplePosts();
+        
+        examplePosts.forEach(post => {
+            const phTime = getPhilippinesTime(post.timestamp);
+            const relativeTime = formatRelativeTime(post.timestamp);
+            const userId = getUserId();
+            let isLiked = false;
+            
+            if (post.isExample) {
+                const exampleLikedByKey = `example_liked_by_${post.id}`;
+                const exampleLikedBy = JSON.parse(localStorage.getItem(exampleLikedByKey) || '[]');
+                isLiked = exampleLikedBy.includes(userId);
+            } else {
+                isLiked = post.likedBy && post.likedBy.includes(userId);
+            }
+            
+            let locationHtml = '';
+            if (post.location) {
+                if (typeof post.location === 'object' && post.location !== null) {
+                    const province = post.location.province || '';
+                    const city = post.location.city || '';
+                    const barangay = post.location.barangay || '';
+                    const address = post.location.address || '';
+                    const locationParts = [province, city, barangay, address].filter(part => part && part.trim());
+                    const locationText = locationParts.join(', ');
+                    if (locationText) {
+                        locationHtml = `<p class="text-xs text-text-muted mt-1">📍 ${escapeHtml(locationText)}</p>`;
+                    }
+                } else {
+                    locationHtml = `<p class="text-xs text-text-muted mt-1">📍 ${escapeHtml(String(post.location))}</p>`;
+                }
+            }
+            
+            let imagesHtml = '';
+            if (post.images && post.images.length > 0) {
+                let gridColsClass = 'sm:grid-cols-2';
+                if (post.images.length === 1) {
+                    gridColsClass = 'sm:grid-cols-1';
+                } else if (post.images.length >= 3) {
+                    gridColsClass = 'sm:grid-cols-3';
+                }
+                const mediaItems = post.images.map((img, idx) => {
+                    const isVideo = typeof img === 'string' && (img.includes('.mp4') || img.includes('video'));
+                    if (isVideo) {
+                        return `<video src="${img}" class="post-media rounded-xl w-full h-40 object-cover border border-white/10 cursor-pointer" data-index="${idx}" data-post-id="${post.id}" controls onerror="console.warn('Video failed to load', this.src)"></video>`;
+                    } else {
+                        return `<img src="${img}" class="post-media rounded-xl w-full h-40 object-cover border border-white/10 cursor-pointer" data-index="${idx}" data-post-id="${post.id}" alt="Post image" onerror="console.warn('Image failed to load:', this.src); this.style.display='none';">`;
+                    }
+                }).join('');
+                imagesHtml = `<div class="grid grid-cols-2 mt-4 gap-3 ${gridColsClass}">${mediaItems}</div>`;
+            }
+            
+            const article = document.createElement('article');
+            article.className = 'glass-card rounded-2xl p-6 border border-white/10 relative';
+            article.dataset.postId = post.id;
+            article.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start space-x-3 flex-1">
+                        ${getUserAvatarHtml('w-10 h-10', true)}
+                        <div class="flex-1 pr-12">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-white font-medium post-author-name">${post.userName || getUserName()}</p>
+                                    ${locationHtml}
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-text-muted">${phTime.date}</p>
+                                    <p class="text-xs text-text-muted">${phTime.time}</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-text-muted mt-1">${relativeTime}</p>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-text-muted mt-4 text-sm"><span class="whitespace-pre-wrap">${linkifyText(post.content || '')}</span></p>
+                ${imagesHtml}
+                <div class="flex items-center justify-between mt-4 text-sm text-text-muted">
+                    <button class="like-btn flex items-center space-x-2 ${isLiked ? 'text-red-500' : 'text-text-muted hover:text-red-500'}" data-post-id="${post.id}" data-liked="${isLiked}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ${isLiked ? 'fill-current' : ''}" fill="${isLiked ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span class="like-count">${post.likes || 0}</span>
+                    </button>
+                    <button class="comments-btn text-xs text-text-muted hover:text-neon-cyan transition" data-post-id="${post.id}">
+                        Comments (${post.comments ? post.comments.length : 0})
+                    </button>
+                </div>
+            `;
+            exampleContainer.appendChild(article);
+        });
+        
+        // Attach event listeners
+        document.querySelectorAll('.comments-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                openCommentsModal(postId);
+            });
+        });
+        
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const postId = this.dataset.postId;
+                const examplePosts = createExamplePosts();
+                const post = examplePosts.find(p => p.id === postId);
+                if (!post) return;
+                
+                const exampleLikedByKey = `example_liked_by_${postId}`;
+                const exampleLikesKey = `example_likes_${postId}`;
+                const userId = getUserId();
+                
+                let exampleLikedBy = JSON.parse(localStorage.getItem(exampleLikedByKey) || '[]');
+                let currentLikes = parseInt(localStorage.getItem(exampleLikesKey) || post.likes) || 0;
+                
+                const isCurrentlyLiked = this.dataset.liked === 'true';
+                
+                if (isCurrentlyLiked) {
+                    currentLikes = Math.max(0, currentLikes - 1);
+                    exampleLikedBy = exampleLikedBy.filter(id => id !== userId);
+                    this.classList.remove('text-red-500');
+                    this.classList.add('text-text-muted');
+                    this.querySelector('svg').setAttribute('fill', 'none');
+                    this.dataset.liked = 'false';
+                } else {
+                    if (!exampleLikedBy.includes(userId)) {
+                        currentLikes = currentLikes + 1;
+                        exampleLikedBy.push(userId);
+                    }
+                    this.classList.add('text-red-500');
+                    this.classList.remove('text-text-muted');
+                    this.querySelector('svg').setAttribute('fill', 'currentColor');
+                    this.dataset.liked = 'true';
+                }
+                
+                this.querySelector('.like-count').textContent = currentLikes;
+                localStorage.setItem(exampleLikedByKey, JSON.stringify(exampleLikedBy));
+                localStorage.setItem(exampleLikesKey, currentLikes.toString());
+            });
+        });
+        
+        document.querySelectorAll('.post-media').forEach(media => {
+            media.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                const index = parseInt(this.dataset.index);
+                openImageViewer(postId, index);
+            });
+        });
+    });
+    
+    // Close comments modal
+    document.getElementById('comments-modal-close')?.addEventListener('click', () => {
+        document.getElementById('comments-modal').classList.add('hidden');
+    });
+    
+    document.getElementById('comments-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'comments-modal') {
+            document.getElementById('comments-modal').classList.add('hidden');
+        }
+    });
+    
+    // Setup global image viewer buttons (from layout.html)
+    const nextBtn = document.getElementById('image-viewer-next');
+    const prevBtn = document.getElementById('image-viewer-prev');
+    const closeBtn = document.getElementById('image-viewer-close');
+    const imageViewerModal = document.getElementById('image-viewer-modal');
+    const img = document.getElementById('image-viewer-img');
+    
+    if (nextBtn) {
+        nextBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            currentViewerIndex = (currentViewerIndex + 1) % currentViewerImages.length;
+            img.src = currentViewerImages[currentViewerIndex];
+            document.getElementById('image-viewer-counter').textContent = `${currentViewerIndex + 1} / ${currentViewerImages.length}`;
+        };
+    }
+    
+    if (prevBtn) {
+        prevBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            currentViewerIndex = (currentViewerIndex - 1 + currentViewerImages.length) % currentViewerImages.length;
+            img.src = currentViewerImages[currentViewerIndex];
+            document.getElementById('image-viewer-counter').textContent = `${currentViewerIndex + 1} / ${currentViewerImages.length}`;
+        };
+    }
+    
+    if (closeBtn) {
+        closeBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            imageViewerModal.classList.add('hidden');
+        };
+    }
+    
+    if (imageViewerModal) {
+        imageViewerModal.addEventListener('click', (e) => {
+            if (e.target === imageViewerModal) {
+                imageViewerModal.classList.add('hidden');
+            }
+        });
+    }
+    </script>
+</div>
+        return `${phTime.date} ${phTime.time}`;
+    }
+    
+    function linkifyText(text) {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return escapeHtml(text).replace(urlRegex, (url) => {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">${url}</a>`;
+        });
+    }
+    
+    function getAvatarHtml(size = 'w-10 h-10', initial = 'S') {
+        // Get profile photo from localStorage to show actual profile picture
+        const profileStateKey = `student_profile_settings_{{ user.id|default:"user_"|escapejs }}`;
+        let photo = null;
+        try {
+            const profileState = JSON.parse(localStorage.getItem(profileStateKey) || '{}');
+            photo = profileState.photo || null;
+        } catch (err) {
+            console.warn('Could not parse profile state');
+        }
+        
+        if (photo) {
+            return `<div class="relative ${size}"><img src="${photo}" class="w-full h-full rounded-full object-cover border border-neon-cyan/60" alt="Avatar" onerror="this.style.display='none'"></div>`;
+        } else {
+            return `<div class="${size} rounded-full bg-neon-cyan/20 border border-neon-cyan/60 flex-shrink-0 flex items-center justify-center text-neon-cyan font-bold">${initial}</div>`;
+        }
+    }
+    
+    // Image viewer for modal
+    let currentViewerImages = [];
+    let currentViewerIndex = 0;
+    
+    function openImageViewer(images, startIndex = 0) {
+        currentViewerImages = images;
+        currentViewerIndex = startIndex;
+        
+        const viewerHtml = `
+            <div class="fixed inset-0 z-[60] bg-black/90 backdrop-blur flex items-center justify-center" id="image-viewer-modal">
+                <div class="relative w-full h-full flex items-center justify-center">
+                    <button id="image-viewer-close" class="absolute top-4 right-4 z-10 text-white text-3xl hover:text-neon-cyan transition">&times;</button>
+                    <button id="image-viewer-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-3xl hover:text-neon-cyan transition">❮</button>
+                    <button id="image-viewer-next" class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-3xl hover:text-neon-cyan transition">❯</button>
+                    <img id="image-viewer-img" src="" alt="Fullscreen" class="max-w-[90vw] max-h-[90vh] object-contain">
+                    <p id="image-viewer-counter" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm"></p>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', viewerHtml);
+        const modal = document.getElementById('image-viewer-modal');
+        const img = document.getElementById('image-viewer-img');
+        const counter = document.getElementById('image-viewer-counter');
+        
+        function showImage(index) {
+            img.src = currentViewerImages[index];
+            counter.textContent = `${index + 1} / ${currentViewerImages.length}`;
+        }
+        
+        showImage(startIndex);
+        
+        document.getElementById('image-viewer-next').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            currentViewerIndex = (currentViewerIndex + 1) % currentViewerImages.length;
+            showImage(currentViewerIndex);
+        });
+        
+        document.getElementById('image-viewer-prev').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            currentViewerIndex = (currentViewerIndex - 1 + currentViewerImages.length) % currentViewerImages.length;
+            showImage(currentViewerIndex);
+        });
+        
+        document.getElementById('image-viewer-close').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            modal.remove();
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    
+    // Comments modal handler - matching property dashboard structure
+    function openCommentsModal(postId, post, isExample = false) {
+        const profileStateKey = `student_profile_settings_{{ user.id|default:"user_"|escapejs }}`;
+        let profilePhoto = null;
+        try {
+            const profileState = JSON.parse(localStorage.getItem(profileStateKey) || '{}');
+            profilePhoto = profileState.photo || null;
+        } catch (err) {
+            console.warn('Could not parse profile state');
+        }
+        
+        const currentUserName = '{{ user.get_full_name|default:user.username|escapejs }}';
+        const currentUserInitial = '{{ user.first_name|default:user.username|slice:":1"|upper|escapejs }}';
+        const phTime = getPhilippinesTime(post.timestamp);
+        
+        // Get author initial
+        const authorInitial = currentUserInitial || 'S';
+        
+        // Create avatar HTML matching property dashboard style
+        const avatarHtml = profilePhoto 
+            ? `<img src="${profilePhoto}" alt="${currentUserName}" class="w-10 h-10 rounded-full border border-neon-cyan/60 object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+               <div class="w-10 h-10 rounded-full bg-neon-cyan/20 border border-neon-cyan/60 hidden flex items-center justify-center text-neon-cyan font-bold text-sm">${authorInitial}</div>`
+            : `<div class="w-10 h-10 rounded-full bg-neon-cyan/20 border border-neon-cyan/60 flex items-center justify-center text-neon-cyan font-bold text-sm">${authorInitial}</div>`;
+        
+        // Create post content HTML matching property dashboard
+        let locationHtml = '';
+        if (post.location) {
+            locationHtml = `<p class="text-xs text-text-muted mt-1">📍 ${escapeHtml(post.location)}</p>`;
+        }
+        
+        let imagesHtml = '';
+        if (post.images && post.images.length > 0) {
+            let gridColsClass = 'sm:grid-cols-2';
+            if (post.images.length === 1) {
+                gridColsClass = 'sm:grid-cols-1';
+            } else if (post.images.length >= 3) {
+                gridColsClass = 'sm:grid-cols-3';
+            }
+            const mediaItems = post.images.map((img, idx) => {
+                return `<img src="${img}" data-index="${idx}" class="rounded-xl w-full h-40 object-cover border border-white/10 cursor-pointer hover:border-neon-cyan/50 transition" alt="Post image" onerror="this.style.display='none'">`;
+            }).join('');
+            imagesHtml = `<div class="grid grid-cols-2 mt-4 gap-3 ${gridColsClass}">${mediaItems}</div>`;
+        }
+        
+        // Build comments HTML
+        let commentsHtml = '';
+        if (post.comments && post.comments.length > 0) {
+            commentsHtml = post.comments.map(comment => {
+                const commentInitial = comment.author ? comment.author.charAt(0).toUpperCase() : 'U';
+                const commentDate = new Date();
+                const formattedDate = commentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const formattedTime = commentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const relativeTime = 'just now';
+                
+                return `
+                    <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-neon-cyan/20 border border-neon-cyan/60 flex-shrink-0 flex items-center justify-center text-neon-cyan font-bold text-sm">${commentInitial}</div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm font-semibold text-white">${escapeHtml(comment.author)}</span>
+                                        <span class="text-xs text-text-muted">${formattedDate} at ${formattedTime}</span>
+                                        <span class="text-xs text-text-muted">• ${relativeTime}</span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-white mt-1">${escapeHtml(comment.text)}</p>
+                                <div class="flex items-center space-x-4 mt-2">
+                                    <button class="reply-btn flex items-center space-x-1 text-text-muted hover:text-neon-cyan text-xs" data-comment-id="${comment.id || 'auto-' + Math.random()}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6-6m-6 6l-6-6" />
+                                        </svg>
+                                        <span>Reply</span>
+                                    </button>
+                                    <button class="flex items-center space-x-1 text-text-muted hover:text-red-500 text-xs">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                        <span>0</span>
+                                    </button>
+                                </div>
+                                <div id="reply-form-${comment.id || 'auto-' + Math.random()}" class="hidden mt-3">
+                                    <div class="flex items-center space-x-2">
+                                        <input type="text" placeholder="Write a reply..." class="flex-1 bg-white/5 rounded-lg px-3 py-2 text-sm text-white border border-white/10 focus:border-neon-cyan/50 outline-none">
+                                        <button class="bg-neon-cyan text-black font-semibold px-3 py-2 rounded-lg hover:bg-neon-cyan/80 text-xs">Send</button>
+                                        <button class="text-text-muted hover:text-white text-xs">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Create modal HTML matching property dashboard structure
+        const modalHtml = `
+            <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4" id="temp-comments-modal">
+                <div class="glass-card rounded-2xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6 border-b border-white/10 sticky top-0 bg-inherit z-10">
+                        <div class="flex items-center justify-between">
+                            <h1 class="text-xl font-semibold text-white">Comments</h1>
+                            <button id="close-temp-modal" class="text-text-muted hover:text-white text-2xl">&times;</button>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <!-- Post content section -->
+                        <div id="comments-post-content">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-shrink-0">
+                                    ${avatarHtml}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-white font-medium">${escapeHtml(currentUserName)}</p>
+                                            ${locationHtml}
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs text-text-muted">${phTime.date}</p>
+                                            <p class="text-xs text-text-muted">${phTime.time}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-white mt-3">${linkifyText(post.content)}</p>
+                            ${imagesHtml}
+                        </div>
+                        
+                        <!-- Comments section -->
+                        <div class="border-t border-white/10 pt-6">
+                            <h2 class="text-sm font-semibold text-white mb-4">Comments (${post.comments ? post.comments.length : 0})</h2>
+                            <div id="comments-list" class="space-y-3">
+                                ${commentsHtml}
+                                ${!commentsHtml ? '<p class="text-sm text-text-muted text-center py-4">No comments yet. Be the first to comment!</p>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Insert modal into DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const tempModal = document.getElementById('temp-comments-modal');
+        
+        // Close button handler
+        document.getElementById('close-temp-modal').addEventListener('click', () => {
+            tempModal.remove();
+        });
+        
+        // Close when clicking outside the modal
+        tempModal.addEventListener('click', (e) => {
+            if (e.target === tempModal) {
+                tempModal.remove();
+            }
+        });
+        
+        // Attach image click handlers
+        if (post.images && post.images.length > 0) {
+            setTimeout(() => {
+                const images = tempModal.querySelectorAll('img[data-index]');
+                images.forEach((img, idx) => {
+                    img.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openImageViewer(post.images, idx);
+                    });
+                });
+            }, 50);
+        }
+        
+        // Attach reply button handlers
+        setTimeout(() => {
+            const replyBtns = tempModal.querySelectorAll('.reply-btn');
+            replyBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const commentId = this.dataset.commentId;
+                    const replyForm = tempModal.querySelector(`#reply-form-${commentId}`);
+                    if (replyForm) {
+                        replyForm.classList.remove('hidden');
+                        const input = replyForm.querySelector('input');
+                        if (input) input.focus();
+                    }
+                });
+            });
+        }, 50);
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const exampleContainer = document.getElementById('example-posts');
+        if (!exampleContainer || exampleContainer.innerHTML.trim()) return;
+        
+        const currentUserName = '{{ user.get_full_name|default:user.username|escapejs }}';
+        const currentUserInitial = '{{ user.first_name|default:user.username|slice:":1"|upper|escapejs }}';
+        
+        examplePosts.forEach(post => {
+            const phTime = getPhilippinesTime(post.timestamp);
+            const relativeTime = formatRelativeTime(post.timestamp);
+            
+            const imagesHtml = post.images && post.images.length > 0 ? `
+                <div class="grid grid-cols-2 mt-4 gap-3 sm:grid-cols-2">
+                    ${post.images.map(img => `<img src="${img}" class="rounded-xl w-full h-40 object-cover border border-white/10" alt="Post image" onerror="this.style.display='none'">`).join('')}
+                </div>
+            ` : '';
+            
+            const locationHtml = post.location ? `<p class="text-xs text-text-muted mt-1">📍 ${escapeHtml(post.location)}</p>` : '';
+            
+            const article = document.createElement('article');
+            article.className = 'glass-card rounded-2xl p-6 border border-white/10 relative';
+            article.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start space-x-3 flex-1">
+                        ${getAvatarHtml('w-10 h-10', currentUserInitial)}
+                        <div class="flex-1 pr-12">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-white font-medium post-author-name">${escapeHtml(currentUserName)}</p>
+                                    ${locationHtml}
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-text-muted">${phTime.date}</p>
+                                    <p class="text-xs text-text-muted">${phTime.time}</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-text-muted mt-1">${relativeTime}</p>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-text-muted mt-4 text-sm"><span class="whitespace-pre-wrap">${linkifyText(post.content)}</span></p>
+                ${imagesHtml}
+                <div class="flex items-center justify-between mt-4 text-sm text-text-muted">
+                    <button class="like-btn flex items-center space-x-2 text-text-muted hover:text-red-500" data-post-id="${post.id}" data-liked="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span class="like-count">${post.likes}</span>
+                    </button>
+                    <button class="comments-btn text-xs text-text-muted hover:text-neon-cyan transition cursor-pointer" data-post-id="${post.id}">Comments (${post.comments ? post.comments.length : 0})</button>
+                </div>
+            `;
+            exampleContainer.appendChild(article);
+        });
+        
+        document.querySelectorAll('.comments-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                const post = examplePosts.find(p => p.id === postId);
+                if (post) {
+                    openCommentsModal(postId, post, true);
+                }
+            });
+        });
+        
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const postId = this.dataset.postId;
+                const post = examplePosts.find(p => p.id === postId);
+                if (!post) return;
+                
+                const exampleLikedByKey = `example_liked_by_${postId}`;
+                const exampleLikesKey = `example_likes_${postId}`;
+                const userId = Math.random().toString(36).substr(2, 9);
+                
+                let exampleLikedBy = JSON.parse(localStorage.getItem(exampleLikedByKey) || '[]');
+                let currentLikes = parseInt(localStorage.getItem(exampleLikesKey) || post.likes) || 0;
+                
+                const isCurrentlyLiked = this.dataset.liked === 'true';
+                
+                if (isCurrentlyLiked) {
+                    currentLikes = Math.max(0, currentLikes - 1);
+                    exampleLikedBy = exampleLikedBy.filter(id => id !== userId);
+                    this.classList.remove('text-red-500');
+                    this.classList.add('text-text-muted');
+                    this.querySelector('svg').setAttribute('fill', 'none');
+                    this.dataset.liked = 'false';
+                } else {
+                    if (!exampleLikedBy.includes(userId)) {
+                        currentLikes = currentLikes + 1;
+                        exampleLikedBy.push(userId);
+                    }
+                    this.classList.add('text-red-500');
+                    this.classList.remove('text-text-muted');
+                    this.querySelector('svg').setAttribute('fill', 'currentColor');
+                    this.dataset.liked = 'true';
+                }
+                
+                this.querySelector('.like-count').textContent = currentLikes;
+                localStorage.setItem(exampleLikedByKey, JSON.stringify(exampleLikedBy));
+                localStorage.setItem(exampleLikesKey, currentLikes.toString());
+            });
+        });
+        
+        // Attach event listeners to posts
+        function attachPostEventListeners() {
+            // Post actions menu
+            document.querySelectorAll('.post-actions-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const postId = this.dataset.postId;
+                    const menu = document.getElementById(`actions-menu-${postId}`);
+                    document.querySelectorAll('[id^="actions-menu-"]').forEach(m => {
+                        if (m.id !== menu.id) m.classList.add('hidden');
+                    });
+                    menu.classList.toggle('hidden');
+                });
+            });
+            
+            // Delete buttons
+            document.querySelectorAll('.delete-post-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const postId = this.dataset.postId;
+                    const menu = document.getElementById(`actions-menu-${postId}`);
+                    if (menu) menu.classList.add('hidden');
+                    if (typeof deletePost === 'function') deletePost(postId);
+                });
+            });
+            
+            // Edit buttons
+            document.querySelectorAll('.edit-post-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const postId = this.dataset.postId;
+                    const menu = document.getElementById(`actions-menu-${postId}`);
+                    if (menu) menu.classList.add('hidden');
+                    if (typeof editPost === 'function') editPost(postId);
+                });
+            });
+            
+            // Comments buttons
+            document.querySelectorAll('.comments-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const postId = this.dataset.postId;
+                    if (typeof openCommentsModal === 'function') openCommentsModal(postId);
+                });
+            });
+            
+            // Like buttons
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const postId = this.dataset.postId;
+                    if (typeof toggleLike === 'function') toggleLike(this, postId);
+                });
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.post-actions-btn') && !e.target.closest('[id^="actions-menu-"]')) {
+                    document.querySelectorAll('[id^="actions-menu-"]').forEach(m => m.classList.add('hidden'));
+                }
+            });
+        }
+        
+        // Call on page load
+        attachPostEventListeners();
+    });
+    </script>
+</div>

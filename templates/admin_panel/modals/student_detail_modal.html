@@ -1,0 +1,109 @@
+<!-- Student Detail Modal -->
+<div id="student-detail-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <!-- Close Button -->
+        <button 
+            onclick="closeStudentDetailModal()" 
+            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+        >
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <!-- Modal Content -->
+        <div class="p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Student Details</h3>
+            
+            <div class="space-y-3">
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-600">Student ID</p>
+                    <p class="font-mono text-sm font-semibold text-gray-900" id="detail-student-id"></p>
+                </div>
+
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-600">Full Name</p>
+                    <p class="text-sm font-semibold text-gray-900" id="detail-student-name"></p>
+                </div>
+
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-600">Email</p>
+                    <p class="text-sm text-gray-900 break-all" id="detail-student-email"></p>
+                </div>
+
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-600">Department</p>
+                    <p class="text-sm text-gray-900" id="detail-student-department"></p>
+                </div>
+
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-600">Program</p>
+                    <p class="text-sm text-gray-900" id="detail-student-program"></p>
+                </div>
+
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-600">Year</p>
+                    <p class="text-sm text-gray-900" id="detail-student-year"></p>
+                </div>
+
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-600">Phone</p>
+                    <p class="text-sm text-gray-900" id="detail-student-phone"></p>
+                </div>
+
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-600">Emergency Contact</p>
+                    <p class="text-sm text-gray-900" id="detail-student-emergency"></p>
+                </div>
+
+                <div class="pt-2">
+                    <button 
+                        onclick="closeStudentDetailModal()" 
+                        class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition font-medium text-sm"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openStudentDetailModal(studentId, studentName, studentID, studentEmail, deptCode, progCode, yearLevel, phone, emergencyName, emergencyPhone) {
+    document.getElementById('detail-student-id').textContent = studentID;
+    document.getElementById('detail-student-name').textContent = studentName;
+    document.getElementById('detail-student-email').textContent = studentEmail;
+    document.getElementById('detail-student-department').textContent = deptCode || '';
+    document.getElementById('detail-student-program').textContent = progCode || '';
+    document.getElementById('detail-student-year').textContent = yearLevel || '';
+    document.getElementById('detail-student-phone').textContent = phone || '';
+    var emergency = (emergencyName || '') + (emergencyPhone ? (' — ' + emergencyPhone) : '');
+    document.getElementById('detail-student-emergency').textContent = emergency;
+    document.getElementById('student-detail-modal').classList.remove('hidden');
+}
+
+function closeStudentDetailModal() {
+    document.getElementById('student-detail-modal').classList.add('hidden');
+}
+
+// Close modal when clicking on backdrop
+var studentDetailModal = document.getElementById('student-detail-modal');
+if (studentDetailModal) {
+    studentDetailModal.addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeStudentDetailModal();
+        }
+    });
+}
+
+// Close modal when pressing Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        var modal = document.getElementById('student-detail-modal');
+        if (modal && !modal.classList.contains('hidden')) {
+            closeStudentDetailModal();
+        }
+    }
+});
+</script>

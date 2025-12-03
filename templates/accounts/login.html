@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boarding House Access - Full Spectrum Laser</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0D1117;
+            color: #E5E7EB;
+        }
+        .primary-gradient {
+            background: linear-gradient(90deg, #00FFFF, #00FFFF, #00FFFF, #00FFFF);
+        }
+        .neon-line-effect {
+            border: 2px solid #00FFFF;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+        }
+        .neon-text-glow {
+            text-shadow: 0 0 5px #00FFFF, 0 0 10px #00FF00, 0 0 15px #FF00FF;
+        }
+        .progress-line {
+            height: 3px;
+            background-color: #374151;
+            position: absolute;
+            left: 1rem;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+        .progress-fill {
+            height: 100%;
+            transition: width 0.4s ease-in-out;
+            background: linear-gradient(to right, #00FFFF, #00FFFF, #00FFFF);
+        }
+        .dark-input {
+            background-color: #1F2937;
+            color: #E5E7EB;
+            border-color: #374151;
+        }
+        .dark-input:focus {
+            border-color: #00FFFF;
+            box-shadow: 0 0 5px #00FFFF;
+        }
+        .toast-enter {
+            animation: toast-slide-in 0.35s ease-out forwards;
+        }
+        .toast-exit {
+            animation: toast-slide-out 0.3s ease-in forwards;
+        }
+        @keyframes toast-slide-in {
+            from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes toast-slide-out {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-6px) scale(0.97); }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#1A1A1D',
+                        'neon-cyan': '#00FFFF',
+                        'neon-pink': '#FF00FF',
+                        'neon-orange': '#FF7B00',
+                        'neon-blue': '#007BFF',
+                        'neon-green': '#00FF00',
+                        'text-gray-subtle': '#9CA3AF',
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="pt-16 min-h-screen">
+    <nav class="bg-primary-dark fixed top-0 left-0 right-0 z-50 shadow-xl border-b border-neon-cyan/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="#" class="text-2xl font-extrabold text-white tracking-wider neon-text-glow">Boarding Hub System</a>
+                <div class="flex space-x-4">
+                    <button id="nav-login" onclick="setMode('login')"
+                            class="py-2 px-4 rounded-full text-white font-medium transition duration-300 transform hover:scale-105 hover:bg-white/10">
+                        Login
+                    </button>
+                    <button id="nav-signup" onclick="setMode('signup')"
+                            class="py-2 px-4 rounded-full border border-neon-cyan/60 text-neon-cyan font-bold hover:bg-neon-cyan/10 hover:border-neon-cyan transition duration-300 transform hover:scale-105 hover:shadow-lg">
+                        Sign Up
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="toast-stack" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] space-y-3 max-w-[90vw] w-full sm:w-auto pointer-events-none px-4"></div>
+
+    <div class="flex items-start justify-center p-4 min-h-[calc(100vh-4rem)] sm:items-center">
+        <div id="app" class="w-full max-w-sm sm:max-w-lg bg-primary-dark rounded-2xl neon-line-effect overflow-hidden transform transition duration-500 ease-in-out my-8 sm:my-0">
+            <header id="card-header" class="bg-primary-dark p-6 text-white text-center rounded-t-2xl shadow-2xl shadow-neon-cyan/20">
+                <h1 class="text-3xl font-extrabold mb-1 neon-text-glow">Access Terminal</h1>
+                <p class="text-neon-cyan text-sm opacity-90">Please select your role below to initiate protocol.</p>
+            </header>
+            <div class="p-6 sm:p-8">
+                <div class="relative flex justify-between items-center mb-8 pt-4">
+                    <div class="progress-line">
+                        <div id="progress-fill" class="progress-fill w-0"></div>
+                    </div>
+                    <div id="step-role" class="flex flex-col items-center z-20">
+                        <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center font-bold text-white transition-all duration-300 ring-2 ring-gray-700" data-step="1">1</div>
+                        <span class="text-xs mt-1 text-text-gray-subtle font-medium">Role</span>
+                    </div>
+                    <div id="step-action" class="flex flex-col items-center z-20">
+                        <div class="w-8 h-8 rounded-full bg-neon-cyan flex items-center justify-center font-bold text-gray-900 transition-all duration-300 ring-2 ring-gray-700" data-step="2">2</div>
+                        <span class="text-xs mt-1 text-neon-cyan font-medium">Action</span>
+                    </div>
+                    <div id="step-form" class="flex flex-col items-center z-20">
+                        <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center font-bold text-white transition-all duration-300 ring-2 ring-gray-700" data-step="3">3</div>
+                        <span class="text-xs mt-1 text-text-gray-subtle font-medium">Details</span>
+                        </div>
+                        </div>
+
+                <div id="role-selection-section" class="text-center mb-6">
+                    <p class="text-gray-300 font-semibold mb-3">Which profile type applies to you?</p>
+                    <div class="flex bg-gray-800 rounded-xl p-1 shadow-inner">
+                        <button id="role-student" type="button" onclick="setRole('student')" class="flex-1 py-3 text-sm font-semibold rounded-xl transition duration-300 ease-in-out">
+                            <span class="font-extrabold">Student</span>
+                        </button>
+                        <button id="role-owner" type="button" onclick="setRole('owner')" class="flex-1 py-3 text-sm font-semibold rounded-xl transition duration-300 ease-in-out">
+                            <span class="font-extrabold">Owner</span>
+                        </button>
+                    </div>
+        </div>
+        
+                <div id="form-container"></div>
+
+                <div id="message-box" class="mt-6 p-4 hidden rounded-xl text-sm transition-opacity duration-300 shadow-md border"></div>
+                        </div>
+                    </div>
+                </div>
+    
+    <div id="forgot-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 hidden z-50">
+        <div class="w-full max-w-md bg-primary-dark neon-line-effect rounded-2xl p-6 relative">
+            <button type="button" onclick="closeForgotModal()" class="absolute top-4 right-4 text-neon-cyan hover:text-white text-2xl font-bold">&times;</button>
+            <div class="text-center mb-6">
+                <p class="text-sm uppercase tracking-widest text-neon-cyan font-semibold">Security Protocol</p>
+                <h2 class="text-3xl font-extrabold text-white neon-text-glow">Password Recovery</h2>
+                <p class="text-text-gray-subtle text-sm mt-2">Three-step verification using the same neon console.</p>
+            </div>
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex-1 text-center">
+                    <div id="forgot-step-email" class="mx-auto w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ring-2">1</div>
+                    <p class="text-xs mt-1 text-text-gray-subtle">Identify</p>
+                </div>
+                <div class="flex-1 text-center">
+                    <div id="forgot-step-code" class="mx-auto w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ring-2">2</div>
+                    <p class="text-xs mt-1 text-text-gray-subtle">Verify</p>
+                </div>
+                <div class="flex-1 text-center">
+                    <div id="forgot-step-reset" class="mx-auto w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ring-2">3</div>
+                    <p class="text-xs mt-1 text-text-gray-subtle">Reset</p>
+                </div>
+            </div>
+            <div id="forgot-form-container" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const portalEndpoints = {
+            login: "{% url 'accounts:login' %}",
+            studentSignup: "{% url 'accounts:student_signup' %}",
+            ownerSignup: "{% url 'accounts:property_owner_signup' %}",
+            forgotRequest: "{% url 'accounts:password_reset_request' %}",
+            forgotVerify: "{% url 'accounts:password_reset_verify' %}",
+            forgotReset: "{% url 'accounts:password_reset_complete' %}",
+        };
+        const csrfInput = `{% csrf_token %}`;
+        const HTML_ESCAPE_LOOKUP = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+        };
+        const roleLabels = {
+            student: 'Student',
+            owner: 'Property Owner',
+        };
+        function escapeHtml(value = '') {
+            return String(value).replace(/[&<>"']/g, (char) => HTML_ESCAPE_LOOKUP[char] || char);
+        }
+
+        const rawPrefill = '{{ portal_prefill|default:"{}"|escapejs }}';
+        let portalPrefill = {};
+        try {
+            portalPrefill = rawPrefill ? JSON.parse(rawPrefill) : {};
+        } catch (error) {
+            portalPrefill = {};
+        }
+        portalPrefill.login = portalPrefill.login || { email: '' };
+        portalPrefill.student = portalPrefill.student || { fullName: '', email: '', phone: '', school: '' };
+        portalPrefill.owner = portalPrefill.owner || { fullName: '', email: '', phone: '', companyName: '' };
+
+        const serverConfig = {
+            initialMode: '{{ initial_mode|default:"signup" }}',
+            initialRole: '{{ initial_role|default:"student" }}',
+            autoSelectRole: {{ auto_select_role|yesno:'true,false' }},
+        };
+
+        const serverMessages = [
+        {% for message in messages %}
+            { text: "{{ message|escapejs }}", level: "{{ message.tags }}" }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        let currentRole = serverConfig.initialRole || 'student';
+        let currentMode = serverConfig.initialMode || 'signup';
+        let isRoleSelected = !!serverConfig.autoSelectRole;
+        let formContainer;
+        let messageBox;
+        let toastStack;
+        let progressFill;
+        let roleSelectionSection;
+        let cardHeader;
+        const forgotState = {
+            step: 1,
+            requestId: null,
+            email: '',
+            code: '',
+        };
+        let forgotModal;
+        let forgotFormContainer;
+        let forgotIndicators = {};
+        let cachedCsrfToken = null;
+
+        function getToastDuration(text = '') {
+            const length = text.trim().length;
+            if (length <= 30) return 3000;
+            if (length <= 60) return 4000;
+            if (length <= 100) return 5000;
+            if (length <= 150) return 6000;
+            return Math.min(15000, 6000 + (length - 150) * 40);
+        }
+
+        function togglePasswordVisibility(inputId, toggleId) {
+            const input = document.getElementById(inputId);
+            const toggle = document.getElementById(toggleId);
+            if (!input || !toggle) return;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    </svg>
+                `;
+            } else {
+                input.type = 'password';
+                toggle.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                `;
+            }
+        }
+        
+        function showMessage(text, typeOrIsError = false) {
+            // Normalize type: accept legacy boolean or string
+            let type = 'success';
+            if (typeof typeOrIsError === 'string') {
+                type = typeOrIsError;
+            } else if (typeof typeOrIsError === 'boolean') {
+                type = typeOrIsError ? 'error' : 'success';
+            }
+
+            const typeClasses = {
+                success: 'bg-green-900/80 border-green-400 text-green-100',
+                error:   'bg-red-900/80 border-red-400 text-red-100',
+                warning: 'bg-yellow-900/80 border-yellow-400 text-yellow-100',
+                info:    'bg-primary-dark/80 border-neon-cyan text-neon-cyan',
+            };
+
+            if (!toastStack) {
+                if (messageBox) {
+                    messageBox.textContent = text;
+                    messageBox.className = `mt-6 p-4 rounded-xl text-sm transition-opacity duration-300 shadow-md border ${typeClasses[type] || typeClasses.success}`;
+                    messageBox.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const toast = document.createElement('div');
+            toast.className = [
+                'toast-enter',
+                'rounded-2xl',
+                'px-5',
+                'py-4',
+                'shadow-2xl',
+                'border',
+                'backdrop-blur',
+                'text-sm',
+                'font-medium',
+                'pointer-events-auto',
+                typeClasses[type] || typeClasses.success,
+            ].join(' ');
+            toast.textContent = text;
+            toastStack.appendChild(toast);
+
+            const duration = getToastDuration(text);
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        function getCsrfToken() {
+            if (cachedCsrfToken) return cachedCsrfToken;
+            const cookieToken = document.cookie.split(';').map((cookie) => cookie.trim()).find((cookie) => cookie.startsWith('csrftoken='));
+            if (cookieToken) {
+                cachedCsrfToken = decodeURIComponent(cookieToken.split('=')[1]);
+                return cachedCsrfToken;
+            }
+            const temp = document.createElement('div');
+            temp.innerHTML = csrfInput;
+            const input = temp.querySelector('input[name="csrfmiddlewaretoken"]');
+            cachedCsrfToken = input ? input.value : '';
+            return cachedCsrfToken;
+        }
+
+        async function postForm(url, data) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-CSRFToken': getCsrfToken(),
+                },
+                body: new URLSearchParams(data),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || payload.success === false) {
+                throw payload;
+            }
+            return payload;
+        }
+
+        function openForgotModal(event) {
+            if (event) event.preventDefault();
+            if (!forgotModal) return;
+            forgotModal.classList.remove('hidden');
+            renderForgotStep();
+        }
+
+        function closeForgotModal() {
+            if (!forgotModal) return;
+            forgotModal.classList.add('hidden');
+            resetForgotState();
+        }
+
+        function resetForgotState() {
+            forgotState.step = 1;
+            forgotState.requestId = null;
+            forgotState.code = '';
+            renderForgotStep();
+        }
+
+        function restartForgotFlow() {
+            resetForgotState();
+        }
+
+        function updateForgotIndicators() {
+            if (!forgotIndicators.email) return;
+            const baseClasses = 'mx-auto w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ring-2 transition-all duration-200';
+            const steps = [
+                { element: forgotIndicators.email, index: 1 },
+                { element: forgotIndicators.code, index: 2 },
+                { element: forgotIndicators.reset, index: 3 },
+            ];
+            steps.forEach(({ element, index }) => {
+                if (!element) return;
+                let stateClass = 'bg-gray-800 text-text-gray-subtle ring-gray-700';
+                if (forgotState.step === index) {
+                    stateClass = 'bg-neon-green text-gray-900 ring-neon-green';
+                } else if (forgotState.step > index) {
+                    stateClass = 'bg-neon-cyan text-gray-900 ring-neon-cyan';
+                }
+                element.className = `${baseClasses} ${stateClass}`;
+            });
+        }
+
+        function renderForgotStep() {
+            if (!forgotFormContainer) return;
+            updateForgotIndicators();
+            if (forgotState.step === 1) {
+                forgotFormContainer.innerHTML = `
+                    <form onsubmit="submitForgotEmail(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neon-blue mb-1">Email Address</label>
+                            <input type="email" name="email" required
+                                   class="w-full px-4 py-3 rounded-xl dark-input border border-gray-700"
+                                   placeholder="user@system.com"
+                                   value="${escapeHtml(forgotState.email || portalPrefill.login?.email || '')}">
+            </div>
+            <button type="submit"
+                                class="w-full px-4 py-3 rounded-xl border border-neon-cyan/60 text-neon-cyan font-bold hover:bg-neon-cyan/10 hover:border-neon-cyan transition duration-150 ease-in-out">
+                            Send Code
+                        </button>
+                    </form>
+                    <p class="text-xs text-text-gray-subtle text-center">We will send a 6-digit holographic code to your email. The code expires in 10 minutes.</p>
+                `;
+            } else if (forgotState.step === 2) {
+                forgotFormContainer.innerHTML = `
+                    <p class="text-sm text-text-gray-subtle text-center">A 6-digit access code was dispatched to <span class="text-neon-cyan font-semibold">${escapeHtml(forgotState.email)}</span>.</p>
+                    <form onsubmit="submitForgotCode(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neon-blue mb-1">Enter Access Code</label>
+                            <input type="text" name="code" required pattern="\\d{6}" maxlength="6"
+                                   class="w-full px-4 py-3 rounded-xl dark-input border border-gray-700 tracking-widest text-center text-lg"
+                                   placeholder="••••••" value="${escapeHtml(forgotState.code || '')}">
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button type="button" onclick="restartForgotFlow()" class="flex-1 px-4 py-3 rounded-xl border border-neon-cyan/60 text-neon-cyan font-bold hover:bg-neon-cyan/10 hover:border-neon-cyan transition duration-150 ease-in-out">
+                                Back
+                            </button>
+                            <button type="submit" class="flex-1 px-4 py-3 rounded-xl border border-neon-cyan/60 text-neon-cyan font-bold hover:bg-neon-cyan/10 hover:border-neon-cyan transition duration-150 ease-in-out">
+                                Verify
+            </button>
+            </div>
+        </form>
+                    <p class="text-xs text-text-gray-subtle text-center">Didn’t receive it? Check spam or request a new code by restarting.</p>
+                `;
+            } else {
+                forgotFormContainer.innerHTML = `
+                    <p class="text-sm text-text-gray-subtle text-center">Code verified for <span class="text-neon-cyan font-semibold">${escapeHtml(forgotState.email)}</span>. Create a new password below.</p>
+                    <form onsubmit="submitForgotReset(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neon-blue mb-1">New Password</label>
+                            <input type="password" name="password" required minlength="8"
+                                   class="w-full px-4 py-3 rounded-xl dark-input border border-gray-700"
+                                   placeholder="Minimum 8 characters">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neon-blue mb-1">Confirm Password</label>
+                            <input type="password" name="confirmPassword" required minlength="8"
+                                   class="w-full px-4 py-3 rounded-xl dark-input border border-gray-700"
+                                   placeholder="Re-type your new password">
+                        </div>
+                        <button type="submit"
+                                class="w-full px-4 py-3 rounded-xl border border-neon-cyan/60 text-neon-cyan font-bold hover:bg-neon-cyan/10 hover:border-neon-cyan transition duration-150 ease-in-out">
+                            Update Password
+                        </button>
+                    </form>
+                `;
+            }
+        }
+
+        async function submitForgotEmail(event) {
+            event.preventDefault();
+            const email = (event.target.email.value || '').trim().toLowerCase();
+            if (!email) {
+                showMessage('Please enter your registered email.', true);
+                return;
+            }
+            try {
+                const response = await postForm(portalEndpoints.forgotRequest, { email });
+                forgotState.email = email;
+                forgotState.requestId = response.requestId;
+                forgotState.step = 2;
+                renderForgotStep();
+                showMessage(response.message || 'Access code sent.');
+            } catch (error) {
+                handleForgotError(error);
+            }
+        }
+
+        async function submitForgotCode(event) {
+            event.preventDefault();
+            if (!forgotState.requestId) {
+                showMessage('Start with your email first.', true);
+                return;
+            }
+            const code = (event.target.code.value || '').trim();
+            if (!code) {
+                showMessage('Enter the 6-digit code.', true);
+                return;
+            }
+            try {
+                const response = await postForm(portalEndpoints.forgotVerify, {
+                    requestId: forgotState.requestId,
+                    code,
+                });
+                forgotState.code = code;
+                forgotState.step = 3;
+                renderForgotStep();
+                showMessage(response.message || 'Access code verified.');
+            } catch (error) {
+                handleForgotError(error);
+            }
+        }
+
+        async function submitForgotReset(event) {
+            event.preventDefault();
+            if (!forgotState.requestId || !forgotState.code) {
+                showMessage('Please verify your access code again.', true);
+                return;
+            }
+            const form = event.target;
+            const password = form.password.value;
+            const confirmPassword = form.confirmPassword.value;
+            const emailSnapshot = forgotState.email;
+            try {
+                const response = await postForm(portalEndpoints.forgotReset, {
+                    requestId: forgotState.requestId,
+                    code: forgotState.code,
+                    password,
+                    confirmPassword,
+                });
+                portalPrefill.login = portalPrefill.login || {};
+                portalPrefill.login.email = emailSnapshot;
+                currentMode = 'login';
+                if (!isRoleSelected) {
+                    isRoleSelected = true;
+                }
+                renderContent();
+                closeForgotModal();
+                showMessage(response.message || 'Password updated successfully.');
+                const loginInput = document.getElementById('login-email');
+                if (loginInput && emailSnapshot) {
+                    loginInput.value = emailSnapshot;
+                }
+            } catch (error) {
+                handleForgotError(error);
+            }
+        }
+
+        function handleForgotError(error) {
+            const message = (error && error.message) ? error.message : 'Unable to process your request right now.';
+            showMessage(message, true);
+        }
+
+        function handleGlobalKeydown(event) {
+            if (event.key === 'Escape' && forgotModal && !forgotModal.classList.contains('hidden')) {
+                closeForgotModal();
+            }
+        }
+
+        function handleSubmit(event) {
+            const form = event.target;
+            const roleField = form.querySelector('input[name="selected-role"]');
+            if (roleField) {
+                roleField.value = currentRole;
+            }
+            if (currentMode !== 'signup') {
+                return;
+            }
+
+            const passwordField = form.querySelector('input[name="password"]');
+            const confirmField = form.querySelector('input[name="confirm-password"]');
+            if (passwordField && confirmField && passwordField.value !== confirmField.value) {
+                event.preventDefault();
+                showMessage('Error: Password mismatch detected. Access denied.', true);
+                return;
+            }
+
+            const fullNameInput = form.querySelector('input[name="full-name"]');
+            const firstNameInput = form.querySelector('input[name="first-name"]');
+            const lastNameInput = form.querySelector('input[name="last-name"]');
+            if (fullNameInput && firstNameInput && lastNameInput) {
+                const segments = fullNameInput.value.trim().split(/\s+/);
+                firstNameInput.value = segments.shift() || '';
+                lastNameInput.value = segments.join(' ');
+            }
+        }
+
+        function generateLoginForm() {
+            const loginPrefill = portalPrefill.login || {};
+            const isStudent = currentRole === 'student';
+            const identifierLabel = isStudent
+                ? 'Authorization ID (Email / School ID / 11-digit Phone)'
+                : 'Email';
+            const identifierPlaceholder = isStudent
+                ? 'e.g., STUDENT-001 • user@school.edu • 0917 000 0000'
+                : 'e.g., owner@hub.com • 0917 000 0000';
+            const helperText = isStudent
+                ? 'Use your school ID, email, or 11-digit PH number (no +63).'
+                : 'Use your email or 11-digit PH number (no +63).';
+            return `
+                <form method="post" action="${portalEndpoints.login}" class="space-y-5" onsubmit="handleSubmit(event)">
+                    ${csrfInput}
+                    <input type="hidden" name="selected-role" value="${escapeHtml(currentRole)}">
+                    <h2 class="text-2xl font-extrabold text-white">${roleLabels[currentRole] || 'Student'} Login</h2>
+                    <p class="text-sm text-text-gray-subtle">Access your terminal to manage bookings and messages.</p>
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-neon-blue mb-1">${identifierLabel}</label>
+                        <input type="text" id="login-email" name="email" required
+                               class="w-full px-4 py-3 rounded-xl transition duration-150 shadow-sm dark-input"
+                               placeholder="${identifierPlaceholder}"
+                               value="${escapeHtml(loginPrefill.email || '')}">
+                        <p class="text-xs text-text-gray-subtle mt-1">${helperText}</p>
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-neon-blue mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" id="login-password" name="password" required
+                                   class="w-full px-4 py-3 pr-12 rounded-xl transition duration-150 shadow-sm dark-input"
+                                   placeholder="••••••••">
+                            <button type="button" onclick="togglePasswordVisibility('login-password', 'login-password-toggle')" 
+                                    id="login-password-toggle" 
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-neon-cyan transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <a href="#" onclick="openForgotModal(event)" class="text-xs text-neon-cyan hover:text-neon-cyan mt-1 block text-right font-medium">Forgot Password?</a>
+                    </div>
+                    <button type="submit"
+                            class="w-full px-4 py-3 rounded-xl border border-neon-cyan/60 text-neon-cyan font-bold hover:bg-neon-cyan/10 hover:border-neon-cyan transition duration-150 ease-in-out">
+                        Login
+                    </button>
+                </form>
+            `;
+        }
+
+        function generateSignUpForm() {
+            const isStudent = currentRole === 'student';
+            const actionUrl = isStudent ? portalEndpoints.studentSignup : portalEndpoints.ownerSignup;
+            const prefill = isStudent ? portalPrefill.student : portalPrefill.owner;
+            const roleName = roleLabels[currentRole] || 'Student';
+            const roleContext = isStudent
+                ? 'Create your user profile to access system functions and search for housing units.'
+                : 'Register your properties and begin managing them within the network.';
+            const extraFields = isStudent
+                ? `
+                    <div>
+                        <label for="signup-school" class="block text-sm font-medium text-neon-blue mb-1">Affiliation ID (School / University)</label>
+                        <input type="text" id="signup-school" name="school"
+                               class="w-full px-4 py-3 rounded-xl transition duration-150 shadow-sm dark-input"
+                               placeholder="e.g., Cybernetics Institute"
+                               value="${escapeHtml(prefill.school || '')}">
+                    </div>
+                `
+                : `
+                    <div>
+                        <label for="signup-company" class="block text-sm font-medium text-neon-blue mb-1">Network Entity Name (Business Name)</label>
+                        <input type="text" id="signup-company" name="company-name"
+                               class="w-full px-4 py-3 rounded-xl transition duration-150 shadow-sm dark-input"
+                               placeholder="e.g., The Digital Dwellings Co."
+                               value="${escapeHtml(prefill.companyName || '')}">
+                    </div>
+                    <div>
+                        <label for="signup-phone" class="block text-sm font-medium text-neon-blue mb-1">Phone Number</label>
+                        <input type="tel" id="signup-phone" name="phone" ${isStudent ? '' : 'required'}
+                               class="w-full px-4 py-3 rounded-xl transition duration-150 shadow-sm dark-input"
+                               placeholder="0917 000 0000"
+                               inputmode="numeric"
+                               pattern="0\\d{10}"
+                               maxlength="11"
+                               value="${escapeHtml(prefill.phone || '')}">
+                        <p class="text-xs text-text-gray-subtle mt-1">Enter the 11-digit format (e.g., 09171234567). No +63 prefix needed.</p>
+                    </div>
+                `;
+
+            return `
+                <form method="post" action="${actionUrl}" class="space-y-5" onsubmit="handleSubmit(event)">
+                    ${csrfInput}
+                    <input type="hidden" name="selected-role" value="${escapeHtml(currentRole)}">
+                    <input type="hidden" name="first-name" value="">
+                    <input type="hidden" name="last-name" value="">
+                    <h2 class="text-2xl font-extrabold text-white">${roleName} Registration</h2>
+                    <p class="text-sm text-text-gray-subtle">${roleContext}</p>
+                    <div>
+                        <label for="signup-name" class="block text-sm font-medium text-neon-blue mb-1">Full Name</label>
+                        <input type="text" id="signup-name" name="full-name" required
+                               class="w-full px-4 py-3 rounded-xl transition duration-150 shadow-sm dark-input"
+                               placeholder="John 'Neo' Smith"
+                               value="${escapeHtml(prefill.fullName || '')}">
+                    </div>
+                    <div>
+                        <label for="signup-email" class="block text-sm font-medium text-neon-blue mb-1">Email</label>
+                        <input type="email" id="signup-email" name="email" required
+                               class="w-full px-4 py-3 rounded-xl transition duration-150 shadow-sm dark-input"
+                               placeholder="user@system.com"
+                               value="${escapeHtml(prefill.email || '')}">
+                    </div>
+                    ${extraFields}
+                    ${isStudent ? `
+                        <div>
+                            <label for="signup-phone-student" class="block text-sm font-medium text-neon-blue mb-1">Phone Number</label>
+                            <input type="tel" id="signup-phone-student" name="phone"
+                                   class="w-full px-4 py-3 rounded-xl transition duration-150 shadow-sm dark-input"
+                                   placeholder="0917 000 0000"
+                                   inputmode="numeric"
+                                   pattern="0\\d{10}"
+                                   maxlength="11"
+                                   value="${escapeHtml(prefill.phone || '')}">
+                            <p class="text-xs text-text-gray-subtle mt-1">Optional, but use the 11-digit PH format (e.g., 09171234567).</p>
+                        </div>
+                    ` : ''}
+                    <div>
+                        <label for="signup-password" class="block text-sm font-medium text-neon-blue mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" id="signup-password" name="password" required minlength="8"
+                                   class="w-full px-4 py-3 pr-12 rounded-xl transition duration-150 shadow-sm dark-input"
+                                   placeholder="Secure Protocol Required (min 8 chars)">
+                            <button type="button" onclick="togglePasswordVisibility('signup-password', 'signup-password-toggle')" 
+                                    id="signup-password-toggle" 
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-neon-cyan transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="signup-confirm-password" class="block text-sm font-medium text-neon-blue mb-1">Confirm Password</label>
+                        <div class="relative">
+                            <input type="password" id="signup-confirm-password" name="confirm-password" required
+                                   class="w-full px-4 py-3 pr-12 rounded-xl transition duration-150 shadow-sm dark-input"
+                                   placeholder="Re-type your key">
+                            <button type="button" onclick="togglePasswordVisibility('signup-confirm-password', 'signup-confirm-password-toggle')" 
+                                    id="signup-confirm-password-toggle" 
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-neon-cyan transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+    </div>
+                    <button type="submit"
+                            class="w-full px-4 py-3 rounded-xl border border-neon-cyan/60 text-neon-cyan font-bold hover:bg-neon-cyan/10 hover:border-neon-cyan transition duration-150 ease-in-out">
+                        Sign Up
+                    </button>
+                    <p class="text-center text-xs text-text-gray-subtle mt-4">By executing registration, you agree to our <a href="#" class="text-neon-cyan hover:text-neon-cyan font-medium">System Protocols and Terms</a>.</p>
+                </form>
+            `;
+        }
+
+        function renderContent() {
+            if (!roleSelectionSection || !formContainer || !cardHeader) return;
+            cardHeader.querySelector('h1').textContent = currentMode === 'signup' ? 'Sign Up Terminal' : 'Login Terminal';
+            cardHeader.querySelector('p').textContent = isRoleSelected
+                ? `System detected user role: ${roleLabels[currentRole] || 'Student'}. Input credentials.`
+                : 'Please select your role below to initiate protocol.';
+
+            if (!isRoleSelected) {
+                roleSelectionSection.classList.remove('hidden');
+                formContainer.innerHTML = '';
+            } else {
+                roleSelectionSection.classList.add('hidden');
+                formContainer.innerHTML = currentMode === 'login' ? generateLoginForm() : generateSignUpForm();
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            const studentBtn = document.getElementById('role-student');
+            const ownerBtn = document.getElementById('role-owner');
+            const navLogin = document.getElementById('nav-login');
+            const navSignup = document.getElementById('nav-signup');
+            const activeRoleStyle = 'bg-gray-700/50 text-neon-cyan shadow-lg border-2 border-neon-cyan';
+            const inactiveRoleStyle = 'bg-transparent text-neon-blue hover:bg-gray-700/50';
+            const baseRoleClasses = 'flex-1 py-3 text-sm font-semibold rounded-xl transition duration-300 ease-in-out';
+
+            [studentBtn, ownerBtn].forEach((btn) => {
+                if (!btn) return;
+                btn.className = baseRoleClasses;
+            });
+
+            if (currentRole === 'student' && studentBtn && ownerBtn) {
+                studentBtn.classList.add(...activeRoleStyle.split(' '));
+                ownerBtn.classList.add(...inactiveRoleStyle.split(' '));
+            } else if (ownerBtn && studentBtn) {
+                ownerBtn.classList.add(...activeRoleStyle.split(' '));
+                studentBtn.classList.add(...inactiveRoleStyle.split(' '));
+            }
+
+            if (navLogin && navSignup) {
+                navLogin.classList.remove('border', 'border-neon-cyan/60', 'text-neon-cyan', 'font-bold');
+                navSignup.classList.remove('border', 'border-neon-cyan/60', 'text-neon-cyan', 'font-bold');
+                if (currentMode === 'login') {
+                    navLogin.classList.add('border', 'border-neon-cyan/60', 'text-neon-cyan', 'font-bold');
+                } else {
+                    navSignup.classList.add('border', 'border-neon-cyan/60', 'text-neon-cyan', 'font-bold');
+                }
+            }
+
+            updateProgressSteps(isRoleSelected ? 3 : 1);
+        }
+
+        function updateProgressSteps(currentStep) {
+            if (!progressFill) return;
+            const steps = [
+                document.querySelector('#step-role > div'),
+                document.querySelector('#step-action > div'),
+                document.querySelector('#step-form > div'),
+            ];
+            const stepActionSpan = document.querySelector('#step-action > span');
+            if (stepActionSpan) {
+                stepActionSpan.textContent = currentMode === 'login' ? 'Login' : 'Sign Up';
+            }
+            const activeClass = 'bg-neon-green ring-neon-green ring-opacity-50 shadow-md shadow-neon-green/30 text-gray-900 scale-110';
+            const completeClass = 'bg-neon-cyan ring-neon-cyan ring-opacity-50 shadow-md shadow-neon-cyan/30 text-gray-900';
+            const inactiveClass = 'bg-gray-600 ring-gray-700 text-white';
+
+            steps.forEach((step) => {
+                if (!step) return;
+                step.classList.remove(...activeClass.split(' '), ...completeClass.split(' '));
+                step.classList.add(...inactiveClass.split(' '));
+                step.classList.remove('scale-110');
+            });
+
+            if (currentStep === 3) {
+                if (steps[0]) steps[0].classList.add(...completeClass.split(' '));
+                if (steps[1]) steps[1].classList.add(...completeClass.split(' '));
+                if (steps[2]) {
+                    steps[2].classList.remove(...inactiveClass.split(' '));
+                    steps[2].classList.add(...activeClass.split(' '));
+                }
+                progressFill.style.width = '100%';
+            } else {
+                if (steps[0]) {
+                    steps[0].classList.remove(...inactiveClass.split(' '));
+                    steps[0].classList.add(...activeClass.split(' '));
+                }
+                if (steps[1]) {
+                    steps[1].classList.remove(...completeClass.split(' '));
+                    steps[1].classList.add(...inactiveClass.split(' '));
+                }
+                if (steps[2]) {
+                    steps[2].classList.remove(...completeClass.split(' '));
+                    steps[2].classList.add(...inactiveClass.split(' '));
+                }
+                progressFill.style.width = '0%';
+            }
+        }
+
+        window.setRole = (role) => {
+            currentRole = role;
+            isRoleSelected = true;
+            renderContent();
+        };
+
+        window.setMode = (mode) => {
+            currentMode = mode;
+            isRoleSelected = false;
+            renderContent();
+        };
+
+        window.openForgotModal = openForgotModal;
+        window.closeForgotModal = closeForgotModal;
+        window.restartForgotFlow = restartForgotFlow;
+        window.submitForgotEmail = submitForgotEmail;
+        window.submitForgotCode = submitForgotCode;
+        window.submitForgotReset = submitForgotReset;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            formContainer = document.getElementById('form-container');
+            messageBox = document.getElementById('message-box');
+            toastStack = document.getElementById('toast-stack');
+            progressFill = document.getElementById('progress-fill');
+            roleSelectionSection = document.getElementById('role-selection-section');
+            cardHeader = document.getElementById('card-header');
+            forgotModal = document.getElementById('forgot-modal');
+            forgotFormContainer = document.getElementById('forgot-form-container');
+            forgotIndicators = {
+                email: document.getElementById('forgot-step-email'),
+                code: document.getElementById('forgot-step-code'),
+                reset: document.getElementById('forgot-step-reset'),
+            };
+            renderContent();
+            renderForgotStep();
+            document.addEventListener('keydown', handleGlobalKeydown);
+            if (forgotModal) {
+                forgotModal.addEventListener('click', (event) => {
+                    if (event.target === forgotModal) {
+                        closeForgotModal();
+                    }
+                });
+            }
+            serverMessages.forEach((msg) => {
+                if (msg && msg.text) {
+                    const tags = (msg.level || '').toLowerCase();
+                    let msgType = 'success';
+                    if (tags.includes('error')) msgType = 'error';
+                    else if (tags.includes('warning')) msgType = 'warning';
+                    else if (tags.includes('info')) msgType = 'info';
+                    showMessage(msg.text, msgType);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Boarding Hub{% endblock %}
+
+{% block header_title %}Dashboard{% endblock %}
+{% block current_view_title %}Dashboard{% endblock %}
+
+{% block sidebar %}
+{% include 'admin_panel/_sidebar.html' %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @keyframes blob {
+        0% {
+            transform: translate(0, 0) scale(1);
+        }
+        33% {
+            transform: translate(30px, -50px) scale(1.1);
+        }
+        66% {
+            transform: translate(-20px, 20px) scale(0.9);
+        }
+        100% {
+            transform: translate(0, 0) scale(1);
+        }
+    }
+    .animate-blob {
+        animation: blob 7s infinite;
+    }
+    .animation-delay-2000 {
+        animation-delay: 2s;
+    }
+</style>
+{% endblock %}
+
+{% block back_button %}
+<!-- No back button on dashboard -->
+{% endblock %}
+
+{% block content %}
+<!-- Main container with gradient background -->
+<div class="antialiased bg-gray-50 relative overflow-hidden" style="margin: -1.5rem; padding: 1.5rem; min-height: calc(100vh - 80px);">
+    
+    <!-- Gradient Orb 1 (Warm, Reflective Pink/Orange) -->
+    <div 
+        class="absolute top-0 right-0 w-80 h-80 sm:w-96 sm:h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" 
+        style="background: radial-gradient(circle at 25% 75%, rgba(255, 150, 150, 0.4) 0%, rgba(255, 200, 100, 0.3) 100%);"
+    ></div>
+    
+    <!-- Gradient Orb 2 (Cool, Reflective Blue/Magenta Blend) -->
+    <div 
+        class="absolute top-20 right-20 w-72 h-72 sm:w-80 sm:h-80 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000" 
+        style="background: radial-gradient(circle at 75% 25%, rgba(150, 200, 255, 0.4) 0%, rgba(255, 100, 200, 0.3) 100%);"
+    ></div>
+    
+    <!-- Content Wrapper -->
+    <div class="relative z-10 max-w-7xl mx-auto"> 
+        <!-- Dashboard Title Bar - Compact -->
+        <header class="mb-6 p-4 bg-white rounded-xl shadow-lg border border-gray-200">
+            <h1 class="text-xl font-extrabold text-gray-900">
+                Dashboard
+            </h1>
+            <p class="text-sm text-gray-500 mt-0.5">
+                Executive monitoring metrics.
+            </p>
+        </header>
+        
+        <!-- Stats Cards Grid - Compact -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <!-- Enrollment Card -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                <div class="flex items-start justify-between mb-2">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">ENROLLMENT</h3>
+                    <div class="p-2 rounded-lg bg-indigo-500 bg-opacity-10">
+                        <i class="fas fa-user-graduate text-indigo-600" style="width: 1rem; height: 1rem;"></i>
+                    </div>
+                </div>
+                <p class="text-2xl font-bold text-gray-900 mb-1">{{ total_students }}</p>
+                <div class="flex items-center text-xs font-medium">
+                    <i class="fas fa-arrow-up text-green-600 mr-1" style="width: 0.75rem; height: 0.75rem;"></i>
+                    <span class="text-green-600">+12%</span>
+                    <p class="text-xs font-normal text-gray-400 ml-2 truncate">Students Tracked</p>
+                </div>
+            </div>
+            
+            <!-- Critical Alerts Card -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                <div class="flex items-start justify-between mb-2">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">CRITICAL ALERTS</h3>
+                    <div class="p-2 rounded-lg bg-red-500 bg-opacity-10">
+                        <i class="fas fa-exclamation-triangle text-red-600" style="width: 1rem; height: 1rem;"></i>
+                    </div>
+                </div>
+                <p class="text-2xl font-bold text-gray-900 mb-1">{{ critical_alerts }}</p>
+                <div class="flex items-center text-xs font-medium">
+                    <i class="fas fa-arrow-up text-green-600 mr-1" style="width: 0.75rem; height: 0.75rem;"></i>
+                    <span class="text-green-600">+1%</span>
+                    <p class="text-xs font-normal text-gray-400 ml-2 truncate">High-Priority Issues</p>
+                </div>
+            </div>
+            
+            <!-- Compliant Card -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                <div class="flex items-start justify-between mb-2">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">COMPLIANT</h3>
+                    <div class="p-2 rounded-lg bg-green-500 bg-opacity-10">
+                        <i class="fas fa-check-circle text-green-600" style="width: 1rem; height: 1rem;"></i>
+                    </div>
+                </div>
+                <p class="text-2xl font-bold text-gray-900 mb-1">{{ verified_properties }}</p>
+                <div class="flex items-center text-xs font-medium">
+                    <i class="fas fa-arrow-up text-green-600 mr-1" style="width: 0.75rem; height: 0.75rem;"></i>
+                    <span class="text-green-600">+2%</span>
+                    <p class="text-xs font-normal text-gray-400 ml-2 truncate">Properties Certified</p>
+                </div>
+            </div>
+            
+            <!-- Pending Verification Card - Clickable Link to Survey Responses -->
+            <a href="{% url 'admin_panel:survey_list' %}" class="no-underline">
+            <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 transition-all duration-300 hover:shadow-lg hover:border-yellow-300 cursor-pointer">
+                <div class="flex items-start justify-between mb-2">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">PENDING RESPONSES</h3>
+                    <div class="p-2 rounded-lg bg-yellow-500 bg-opacity-10">
+                        <i class="fas fa-clock text-yellow-600" style="width: 1rem; height: 1rem;"></i>
+                    </div>
+                </div>
+                <p class="text-2xl font-bold text-gray-900 mb-1">{{ pending_survey_responses }}</p>
+                <div class="flex items-center text-xs font-medium">
+                    <i class="fas fa-file-alt text-yellow-600 mr-1" style="width: 0.75rem; height: 0.75rem;"></i>
+                    <span class="text-yellow-600">Students Awaiting Approval</span>
+                    <p class="text-xs font-normal text-gray-400 ml-2 truncate">Click to review</p>
+                </div>
+            </div>
+            </a>
+        </div>
+        
+        <!-- Main Content Layout (Analytics & Alerts) - Compact -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <!-- Left Column: Chart Placeholder (Takes 2/3 width on large screens) -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100 flex flex-col">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2 border-b pb-2">Safety Index & Responses</h3>
+                    <div class="flex-grow mt-3">
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-500">Responses by Department (recent)</p>
+                        </div>
+
+                        <!-- Department Response Bar Chart -->
+                        <div id="dept-chart" class="space-y-2">
+                            <!-- Bars inserted by JS -->
+                        </div>
+                        <div id="dept-chart-legend" class="text-xs text-gray-500 mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Recent Alerts (Takes 1/3 width on large screens) -->
+            <div class="lg:col-span-1 bg-white p-4 rounded-xl shadow-md border border-gray-100">
+                <h2 class="text-lg font-bold text-gray-800 mb-2 border-b pb-2">Recent Activity</h2>
+                <div class="space-y-1">
+                    {% if recent_alerts %}
+                        {% for alert in recent_alerts %}
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition duration-100">
+                            <div class="flex flex-col">
+                                <p class="text-sm font-medium text-gray-700">{{ alert.property.property_id|default:"Unknown" }}</p>
+                                <p class="text-xs text-gray-400 mt-0.5 flex items-center">
+                                    <i class="fas fa-clock mr-1" style="width: 0.75rem; height: 0.75rem;"></i> {{ alert.created_at|timesince }} ago
+                                </p>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold 
+                                {% if alert.status == 'open' %}text-red-600 bg-red-100
+                                {% elif alert.status == 'investigating' %}text-yellow-600 bg-yellow-100
+                                {% else %}text-green-600 bg-green-100{% endif %}">
+                                {{ alert.status|title }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="py-4 text-center text-gray-500 text-sm">
+                            <i class="fas fa-bell-slash text-2xl mb-2 text-gray-300"></i>
+                            <p>No recent alerts</p>
+                        </div>
+                    {% endif %}
+                    <a href="{% url 'admin_panel:emergency' %}" class="block w-full text-center text-xs font-medium text-indigo-600 hover:text-indigo-800 mt-2 py-1 rounded-lg transition">
+                        View All →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// department_response_counts_json is provided by the view as a JSON string
+try {
+    const deptData = JSON.parse('{{ department_response_counts_json|escapejs }}' || '[]');
+    const chartEl = document.getElementById('dept-chart');
+    if (chartEl && Array.isArray(deptData) && deptData.length > 0) {
+        const maxCount = Math.max(...deptData.map(d => d.count));
+        deptData.forEach(d => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center space-x-3';
+            const label = document.createElement('div');
+            label.className = 'w-40 text-xs text-gray-700 truncate';
+            label.textContent = d.department;
+
+            const barWrapper = document.createElement('div');
+            barWrapper.className = 'flex-1 bg-gray-100 rounded-full h-4 overflow-hidden';
+
+            const bar = document.createElement('div');
+            const pct = maxCount > 0 ? Math.round((d.count / maxCount) * 100) : 0;
+            bar.style.width = pct + '%';
+            bar.className = 'h-4 rounded-full bg-indigo-500 transition-all';
+
+            const countLabel = document.createElement('div');
+            countLabel.className = 'w-12 text-right text-xs text-gray-600';
+            countLabel.textContent = d.count;
+
+            barWrapper.appendChild(bar);
+            row.appendChild(label);
+            row.appendChild(barWrapper);
+            row.appendChild(countLabel);
+            chartEl.appendChild(row);
+        });
+    } else if (chartEl) {
+        chartEl.innerHTML = '<p class="text-sm text-gray-400 italic">No department response data available.</p>';
+    }
+} catch (e) {
+    console.error('Error rendering department chart', e);
+}
+</script>
+
+{% endblock %}

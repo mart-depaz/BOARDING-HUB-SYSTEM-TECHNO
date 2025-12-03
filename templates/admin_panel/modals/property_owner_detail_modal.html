@@ -1,0 +1,78 @@
+<!-- Property Owner Detail Modal -->
+<div id="property-owner-detail-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <!-- Close Button -->
+        <button 
+            onclick="closePropertyOwnerDetailModal()" 
+            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+        >
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <!-- Modal Content -->
+        <div class="p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Property Owner Details</h3>
+            
+                        <div class="space-y-3">
+                            <div class="border-b pb-3">
+                                <p class="text-xs text-gray-600">Name</p>
+                                <p class="text-sm font-semibold text-gray-900" id="detail-owner-name"></p>
+                            </div>
+
+                            <div class="border-b pb-3">
+                                <p class="text-xs text-gray-600">Email</p>
+                                <p class="text-sm text-gray-900 break-all" id="detail-owner-email"></p>
+                            </div>
+
+                            <div class="border-b pb-3">
+                                <p class="text-xs text-gray-600">Phone</p>
+                                <p class="text-sm text-gray-900" id="detail-owner-phone"></p>
+                            </div>
+
+                            <div class="pt-2">
+                                <button 
+                                    onclick="closePropertyOwnerDetailModal()" 
+                                    class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition font-medium text-sm"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openPropertyOwnerDetailModal(ownerId, ownerName, ownerEmail, ownerPhone) {
+    document.getElementById('detail-owner-name').textContent = ownerName;
+    document.getElementById('detail-owner-email').textContent = ownerEmail;
+    document.getElementById('detail-owner-phone').textContent = ownerPhone || '';
+    document.getElementById('property-owner-detail-modal').classList.remove('hidden');
+}
+
+function closePropertyOwnerDetailModal() {
+    document.getElementById('property-owner-detail-modal').classList.add('hidden');
+}
+
+// Close modal when clicking on backdrop
+var propertyOwnerDetailModal = document.getElementById('property-owner-detail-modal');
+if (propertyOwnerDetailModal) {
+    propertyOwnerDetailModal.addEventListener('click', function(event) {
+        if (event.target === this) {
+            closePropertyOwnerDetailModal();
+        }
+    });
+}
+
+// Close modal when pressing Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        var modal = document.getElementById('property-owner-detail-modal');
+        if (modal && !modal.classList.contains('hidden')) {
+            closePropertyOwnerDetailModal();
+        }
+    }
+});
+</script>

@@ -1,0 +1,588 @@
+/* ================================================================
+   MOBILE NAVIGATION STYLES
+   ================================================================
+   Responsive navigation menu for mobile and tablet devices
+   Handles toggle/show/hide of navigation items in top bar
+   ================================================================ */
+
+/* ================================================================
+   MOBILE TOGGLE BUTTON (Hamburger Menu)
+   ================================================================ */
+
+.mobile-nav-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: all 0.15s ease;
+    z-index: 50;
+}
+
+.mobile-nav-toggle:hover {
+    transform: scale(1.1);
+    color: #00FFFF;
+}
+
+.mobile-nav-toggle.active i::before {
+    content: '\f00d'; /* Close icon */
+}
+
+/* ================================================================
+   MOBILE NAV CONTAINER (Sidebar Menu for Mobile)
+   ================================================================ */
+
+.mobile-nav-menu {
+    display: none;
+    position: fixed;
+    left: -300px;
+    top: 64px;
+    height: calc(100vh - 64px);
+    width: 300px;
+    background: rgba(5, 7, 14, 0.98);
+    border-right: 2px solid rgba(0, 255, 157, 0.3);
+    backdrop-filter: blur(10px);
+    z-index: 49;
+    transition: left 0.3s ease-in-out;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.8);
+    overflow-y: auto;
+}
+
+.mobile-nav-menu.active {
+    display: flex;
+    flex-direction: column;
+    left: 0;
+}
+
+.mobile-nav-menu.hide {
+    animation: slideOutLeft 0.3s ease-out forwards;
+}
+
+@keyframes slideOutLeft {
+    from {
+        left: 0;
+    }
+    to {
+        left: -300px;
+    }
+}
+
+/* Overlay for sidebar */
+.mobile-nav-overlay {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 64px);
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 48;
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.mobile-nav-overlay.active {
+    display: block;
+}
+
+.mobile-nav-overlay.hide {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* ================================================================
+   MOBILE NAV ITEMS
+   ================================================================ */
+
+.mobile-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0, 255, 157, 0.1);
+    text-decoration: none;
+    color: rgba(0, 255, 157, 0.8);
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mobile-nav-item:last-child {
+    border-bottom: none;
+}
+
+.mobile-nav-item:hover {
+    background: rgba(0, 255, 157, 0.08);
+    color: rgba(0, 255, 157, 1);
+    padding-left: 24px;
+}
+
+.mobile-nav-item.active {
+    background: rgba(0, 255, 157, 0.15);
+    color: rgba(0, 255, 157, 1);
+    border-left: 4px solid rgba(0, 255, 157, 0.8);
+    padding-left: 16px;
+}
+
+/* ================================================================
+   MEDIA QUERY: TABLET & BELOW
+   ================================================================
+   Screen sizes: up to 768px (iPad, Android tablets, small laptops)
+   ================================================================ */
+
+@media (max-width: 768px) {
+    /* Show mobile toggle button */
+    .mobile-nav-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Ensure visible on light headers: use dark icon and subtle background */
+        color: #00FFFF; /* neon cyan for high contrast on dark headers */
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        position: relative;
+        z-index: 100000 !important;
+    }
+
+    /* Position hamburger at left edge so it remains reachable on very small screens */
+    .nav-header { position: relative; }
+    .mobile-nav-toggle {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* Ensure notification indicators don't overlap the left hamburger */
+    .nav-header .relative { position: relative; }
+    .nav-header .relative > #notif-indicator { z-index: 20; }
+    .mobile-nav-toggle { z-index: 60; }
+
+    /* My Home pills - organize for cellphone view (stack / wrap, smaller font)
+       Ensures My Posts / My Boarders / My Payments / My Messenger fit without overlap */
+    .sticky .flex {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .sticky .flex .myhome-pill {
+        flex: 1 1 48%;
+        min-width: 44%;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.78rem;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sticky .flex .myhome-pill.myhome-pill-active {
+        font-weight: 700;
+    }
+
+    /* Hide desktop navigation items in normal flow */
+    .nav-items-desktop {
+        display: none;
+    }
+
+    /* Adjust header layout for mobile */
+    .nav-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    /* Mobile menu positioning */
+    .mobile-nav-menu {
+        width: 100%;
+        left: 0;
+        right: 0;
+    }
+
+    .mobile-nav-item {
+        padding: 1rem 1.25rem;
+        font-size: 0.9rem;
+    }
+
+    .mobile-nav-item:hover {
+        padding-left: 1.5rem;
+    }
+}
+
+/* ================================================================
+   PROFILE DROPDOWN - Mobile z-index override
+   ================================================================
+   Ensure profile dropdown appears on top layer on mobile devices
+   ================================================================ */
+
+@media (max-width: 768px) {
+    #profile-dropdown {
+        z-index: 99999 !important;
+    }
+
+    #profile-dropdown-btn {
+        z-index: 99998 !important;
+    }
+
+    /* Also ensure it has proper positioning for mobile */
+    #profile-dropdown {
+        position: fixed !important;
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 70px !important;
+        width: calc(100vw - 2rem) !important;
+        max-width: 100%;
+    }
+}
+
+/* ================================================================
+   GLOBAL MOBILE LAYOUT TWEAKS
+   Applies site-wide mobile-friendly sizing so pages render neatly
+   on phones and small tablets without changing desktop layout.
+   ================================================================ */
+@media (max-width: 768px) {
+    /* Base scaling */
+    html { font-size: 15px; }
+    body { line-height: 1.28; }
+
+    /* Reduce card paddings so content fits better */
+    .glass-card { padding: 1rem !important; }
+
+    /* Buttons & pills: smaller padding and font-size */
+    button, .nav-pill, .myhome-pill, .primary-gradient, .post-actions button {
+        font-size: 0.92rem !important;
+        padding: 0.45rem 0.75rem !important;
+    }
+
+    /* Nav items and mobile link items */
+    .mobile-nav-item, .nav-pill { font-size: 0.92rem !important; }
+
+    /* Inputs and textareas: slightly smaller and more compact */
+    input[type="text"], input[type="email"], textarea, .comment-form input, .reply-input {
+        font-size: 0.95rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    /* Reduce spacing in post/article cards */
+    article.glass-card, .post-feed article { padding: 0.9rem !important; }
+
+    /* Reduce header title size a bit on tablets/phones */
+    #current-view-title, .nav-header .text-xl { font-size: 1rem !important; }
+}
+
+@media (max-width: 480px) {
+    /* Further reduce font-size for very small phones */
+    html { font-size: 14px; }
+
+    /* Even tighter paddings */
+    .glass-card { padding: 0.75rem !important; }
+
+    button, .nav-pill, .myhome-pill, .primary-gradient {
+        font-size: 0.82rem !important;
+        padding: 0.36rem 0.6rem !important;
+    }
+
+    /* Inputs: compact but still tappable */
+    input[type="text"], textarea, .comment-form input, .reply-input {
+        font-size: 0.9rem !important;
+        padding: 0.45rem 0.6rem !important;
+    }
+
+    /* Make sure nav header items don't wrap awkwardly */
+    .nav-header { gap: 0.5rem !important; }
+
+    /* Reduce margins around images in modal to keep them visible */
+    .comments-modal-media { margin-bottom: 0.6rem !important; }
+}
+
+/* ================================================================
+   MEDIA QUERY: SMALL MOBILE DEVICES
+   ================================================================
+   Screen sizes: up to 480px (iPhone, Android phones)
+   ================================================================ */
+
+@media (max-width: 480px) {
+    .mobile-nav-toggle {
+        padding: 0.4rem;
+        font-size: 1.25rem;
+    }
+
+    .mobile-nav-menu {
+        max-height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+
+    .mobile-nav-item {
+        padding: 0.9rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .mobile-nav-item:hover {
+        padding-left: 1.5rem;
+    }
+}
+
+/* Tighter button styles for comments modal on very small screens */
+@media (max-width: 480px) {
+    /* Make the comment input and buttons compact and aligned */
+    #comments-modal form#comments-form {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        padding: 0.5rem !important;
+        background: linear-gradient(180deg, rgba(5,7,14,0), rgba(5,7,14,0.95));
+    }
+
+    /* Shrink the input slightly but allow it to flex */
+    #comments-modal #comment-input,
+    #comments-modal .reply-input {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.92rem;
+        padding: 0.55rem 0.65rem;
+    }
+
+    /* Compact submit/send buttons */
+    #comments-modal form#comments-form button[type="submit"],
+    #comments-modal .reply-send-btn,
+    #comments-modal .comment-post-btn {
+        flex: 0 0 auto;
+        min-width: 48px !important;
+        padding: 0.38rem 0.5rem !important;
+        font-size: 0.75rem !important;
+        line-height: 1 !important;
+    }
+
+    /* Compact cancel buttons (if present) */
+    #comments-modal form#comments-form button[type="button"],
+    #comments-modal .comment-cancel-btn {
+        padding: 0.35rem 0.45rem !important;
+        font-size: 0.75rem !important;
+    }
+
+    /* Ensure action buttons inside each comment wrap and don't overflow */
+    .comments-item-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+    }
+
+    .comments-item-actions button {
+        padding: 0.32rem 0.45rem !important;
+        font-size: 0.72rem !important;
+        min-width: 36px !important;
+    }
+
+    /* Small tweak: reduce inner card padding so modal content has more room */
+    #comments-modal .glass-card { padding: 0.75rem 0.75rem 5rem 0.75rem; }
+}
+
+/* Reduce location font size on very small screens to avoid overlap */
+@media (max-width: 480px) {
+    .glass-card p.text-sm {
+        font-size: 0.75rem;
+        line-height: 1.1;
+    }
+}
+
+/* Ensure post location text wraps and is not truncated on small screens */
+@media (max-width: 768px) {
+    .glass-card p.text-sm {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        word-break: break-word;
+    }
+}
+
+/* Ensure notification indicators are small dots (no numeric badge) */
+#notif-indicator, #notification-dot {
+    width: 10px !important;
+    height: 10px !important;
+    min-width: 10px !important;
+    min-height: 10px !important;
+    padding: 0 !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+}
+
+/* ================================================================
+   COMMENTS MODAL - Mobile fixes
+   - Top-align modal on small screens so it doesn't get hidden by keyboard
+   - Make modal content scrollable and set max height
+   - Stick comment form to bottom inside modal with safe spacing
+   - Ensure reply buttons are visible and not overlapped
+   ================================================================ */
+@media (max-width: 768px) {
+    /* Make the modal align to the top and use full height */
+    #comments-modal {
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding-top: 1.25rem; /* spacing from top */
+    }
+
+    #comments-modal .glass-card {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 0.25rem;
+        max-height: calc(100vh - 2rem);
+        overflow: hidden; /* internal scroll handled by inner container */
+        border-radius: 1rem;
+    }
+
+    /* Make inner content scrollable while comment form stays visible */
+    #comments-modal #comments-list,
+    #comments-modal #comments-post-content {
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Make comment form sticky to the bottom of the modal */
+    #comments-modal form#comments-form {
+        position: sticky;
+        bottom: 0;
+        background: linear-gradient(180deg, rgba(5,7,14,0), rgba(5,7,14,0.9));
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        z-index: 40;
+    }
+
+    /* Ensure buttons inside comments have sufficient spacing and are touch-friendly */
+    #comments-modal .comment-action-btn,
+    #comments-modal .reply-btn,
+    #comments-modal .like-btn {
+        padding: 0.5rem 0.75rem;
+        min-width: 44px;
+        touch-action: manipulation;
+        z-index: 45;
+    }
+
+    /* Ensure reply button won't be covered by on-screen keyboard when focused */
+    #comment-input:focus {
+        scroll-margin-bottom: 220px;
+    }
+}
+
+/* ================================================================
+   MEDIA QUERY: LARGE SCREENS (DESKTOP)
+   ================================================================
+   Screen sizes: 769px and above
+   ================================================================ */
+
+@media (min-width: 769px) {
+    /* Hide mobile toggle on desktop */
+    .mobile-nav-toggle {
+        display: none !important;
+    }
+
+    /* Show desktop navigation items */
+    .nav-items-desktop {
+        display: flex !important;
+        align-items: center;
+        space-x: 0.5rem;
+    }
+
+    /* Hide mobile menu on desktop */
+    .mobile-nav-menu {
+        display: none !important;
+    }
+}
+
+/* ================================================================
+   SCROLLBAR STYLING FOR MOBILE MENU
+   ================================================================ */
+
+.mobile-nav-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.mobile-nav-menu::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 255, 255, 0.4);
+    border-radius: 3px;
+}
+
+.mobile-nav-menu::-webkit-scrollbar-track {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* ================================================================
+   ACCESSIBILITY: FOCUS STATES
+   ================================================================ */
+
+.mobile-nav-toggle:focus,
+.mobile-nav-item:focus {
+    outline: 2px solid #00FFFF;
+    outline-offset: 2px;
+}
+
+/* ================================================================
+   ANIMATION: RIPPLE EFFECT ON CLICK
+   ================================================================ */
+
+.mobile-nav-item::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(0, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.mobile-nav-item:active::after {
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    to {
+        width: 300px;
+        height: 300px;
+        opacity: 0;
+    }
+}
+
+/* ================================================================
+   DARK MODE SUPPORT (if needed in future)
+   ================================================================ */
+
+@media (prefers-color-scheme: dark) {
+    .mobile-nav-menu {
+        background: rgba(5, 7, 14, 0.98);
+    }
+
+    .mobile-nav-item {
+        color: rgba(255, 255, 255, 0.7);
+    }
+}
+
+/* ================================================================
+   REDUCED MOTION SUPPORT (Accessibility)
+   ================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    .mobile-nav-menu,
+    .mobile-nav-item,
+    .mobile-nav-toggle {
+        animation: none !important;
+        transition: none !important;
+    }
+}

@@ -1,0 +1,2137 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if survey %}Edit Survey{% else %}Create Survey{% endif %} - Boarding Hub{% endblock %}
+
+{% block header_title %}Safety Management Panel{% endblock %}
+{% block current_view_title %}{% if survey %}Edit Survey{% else %}Create Survey{% endif %}{% endblock %}
+
+{% block sidebar %}
+{% include 'admin_panel/_sidebar.html' %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .step-indicator {
+        position: relative;
+        flex: 1;
+    }
+    .step-indicator:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: #e5e7eb;
+        z-index: 0;
+    }
+    .step-indicator.active:not(:last-child)::after,
+    .step-indicator.completed:not(:last-child)::after {
+        background: #14b8a6;
+    }
+    .step-circle {
+        position: relative;
+        z-index: 10;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #d1d5db;
+        background: white;
+        transition: all 0.3s;
+        margin: 0 auto;
+    }
+    .step-indicator.active .step-circle {
+        border-color: #14b8a6;
+        background: white;
+    }
+    .step-indicator.completed .step-circle {
+        background: #14b8a6;
+        border-color: #14b8a6;
+    }
+    .step-indicator.completed .step-circle i {
+        color: white;
+    }
+    .step-indicator.active .step-circle i {
+        color: #14b8a6;
+    }
+    .step-indicator:not(.active):not(.completed) .step-circle i {
+        color: #6b7280;
+    }
+    .question-type-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+    .section-card {
+        border: 3px solid #818cf8;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: white;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        transition: border-color 0.3s ease;
+    }
+    .section-card input,
+    .section-card textarea,
+    .section-card select {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    .step-content {
+        display: none;
+    }
+    .step-content.active {
+        display: block;
+    }
+    /* Fix content spacing and prevent overflow */
+    #survey-form {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    .step-content {
+        padding: 0;
+    }
+    /* Prevent horizontal scrollbar */
+    body {
+        overflow-x: hidden;
+    }
+    .max-w-5xl {
+        overflow-x: hidden;
+    }
+    main {
+        overflow-x: hidden;
+    }
+    /* Organize step content areas */
+    .step-content > div {
+        width: 100%;
+        max-width: 100%;
+    }
+    .section-card {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    .questions-container {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    /* Error message styling */
+    .error-message {
+        display: none;
+        padding: 0.75rem;
+        margin-bottom: 1.5rem;
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+        border-radius: 0.5rem;
+        align-items: center;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    .error-message.show {
+        display: flex;
+    }
+    /* Preview Modal Styles */
+    .preview-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 999999;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 2rem;
+        align-items: flex-start;
+        justify-content: center;
+    }
+    .preview-modal.active {
+        display: flex;
+    }
+    .preview-content {
+        max-width: 800px;
+        width: 90%;
+        margin: 0 auto;
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        position: relative;
+        margin-top: 3rem;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    .preview-content * {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    .preview-body {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    .preview-body > div {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+        text-align: left;
+    }
+    /* Center preview sections like student survey */
+    .preview-body .bg-indigo-50,
+    .preview-body .bg-yellow-50,
+    .preview-body .bg-white {
+        margin: 0 auto;
+        max-width: 100%;
+    }
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    .preview-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 2.5rem;
+        height: 2.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        transition: all 0.2s;
+    }
+    .preview-close:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto overflow-x-hidden">
+    <header class="mb-4 p-4 bg-white rounded-xl shadow-lg">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-extrabold text-indigo-800">{% if survey %}Edit Survey{% else %}Create New Survey{% endif %}</h1>
+                <p class="text-sm text-gray-600 mt-1">Design your student registration survey with a step-by-step wizard.</p>
+            </div>
+            <a href="{% url 'admin_panel:survey_list' %}" class="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition">
+                <i class="fas fa-arrow-left mr-1"></i>Back
+            </a>
+        </div>
+    </header>
+
+    <!-- Step Indicator -->
+    <nav aria-label="Progress" class="mb-4">
+        <ol class="flex items-center justify-between text-center space-x-3">
+            <li class="flex-1 relative step-indicator active" id="step-indicator-1">
+                <div class="step-circle">
+                    <i class="fas fa-list text-sm" id="step-icon-1"></i>
+                </div>
+                <span class="mt-1 block text-xs font-medium text-gray-900">Setup</span>
+            </li>
+            <li class="flex-1 relative step-indicator" id="step-indicator-2">
+                <div class="step-circle">
+                    <i class="fas fa-th-large text-sm" id="step-icon-2"></i>
+                </div>
+                <span class="mt-1 block text-xs font-medium text-gray-500">Design</span>
+            </li>
+            <li class="flex-1 relative step-indicator" id="step-indicator-3">
+                <div class="step-circle">
+                    <i class="fas fa-check-circle text-sm" id="step-icon-3"></i>
+                </div>
+                <span class="mt-1 block text-xs font-medium text-gray-500">Review & Save</span>
+            </li>
+        </ol>
+    </nav>
+
+<form method="post" id="survey-form" class="space-y-6">
+    {% csrf_token %}
+    {% if survey %}
+    <input type="hidden" name="survey_id" value="{{ survey.id }}">
+    {% endif %}
+    
+    <!-- Content Area -->
+    <main class="bg-white p-4 rounded-xl shadow-2xl border border-gray-200 overflow-x-hidden">
+        <!-- STEP 1: SURVEY SETUP -->
+        <div class="step-content active" id="step-1">
+            <div class="space-y-3 w-full">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">1. Survey Setup</h2>
+                    <p class="text-sm text-gray-600">Define the core information and purpose of this survey.</p>
+                </div>
+                
+                <div class="bg-white p-4 rounded-xl shadow-lg border border-indigo-100 w-full">
+                <!-- Survey Title -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Survey Title <span class="text-red-500">*</span></label>
+                    <input type="text" name="title" id="survey-title" value="{% if survey %}{{ survey.title }}{% else %}Student Registration Survey{% endif %}" required
+                           class="mt-1 block w-full p-2 border-2 border-indigo-300 rounded-lg shadow-sm text-base font-bold focus:ring-indigo-500 focus:border-indigo-500 transition"
+                           placeholder="e.g., Annual Student Well-being Assessment">
+                </div>
+
+                <!-- Description -->
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="description" id="survey-description" rows="3"
+                              class="mt-1 block w-full p-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500 transition"
+                              placeholder="Explain the goal of the survey and who should participate.">{% if survey %}{{ survey.description }}{% else %}Please fill out this survey with your personal information and property details.{% endif %}</textarea>
+                </div>
+                
+                
+                <!-- Status -->
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Initial Status</label>
+                    <select name="status" id="survey-status" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <option value="draft" {% if survey and survey.status == 'draft' %}selected{% endif %}>Draft (Not accessible/editable by others)</option>
+                        <option value="active" {% if survey and survey.status == 'active' %}selected{% endif %}>Active (Ready to be published)</option>
+                        <option value="closed" {% if survey and survey.status == 'closed' %}selected{% endif %}>Closed</option>
+                    </select>
+                </div>
+                
+                <!-- Category -->
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Survey Category</label>
+                    <select name="category" id="survey-category" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <option value="uncategorized" {% if survey and survey.category == 'uncategorized' %}selected{% endif %}>Uncategorized</option>
+                        <option value="registration" {% if survey and survey.category == 'registration' %}selected{% endif %}>Registration (creates accounts)</option>
+                        <option value="checkin" {% if survey and survey.category == 'checkin' %}selected{% endif %}>Check-in / Status</option>
+                        <option value="other" {% if survey and survey.category == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+
+                <!-- Email Validation -->
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Email Validation</label>
+                    <select name="email_validation" id="survey-email-validation" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <option value="any" {% if survey and survey.email_validation == 'any' %}selected{% endif %}>Any valid email</option>
+                        <option value="gmail" {% if survey and survey.email_validation == 'gmail' %}selected{% endif %}>Gmail only</option>
+                        <option value="university" {% if survey and survey.email_validation == 'university' %}selected{% endif %}>University email only</option>
+                        <option value="both" {% if survey and survey.email_validation == 'both' %}selected{% endif %}>Gmail or University</option>
+                    </select>
+                </div>
+                
+                <!-- Property Info Required -->
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Property Information</label>
+                    <div class="mt-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="require_property_info" id="survey-require-property" {% if not survey or survey.require_property_info %}checked{% endif %}
+                                   class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            <span class="ml-2 text-xs text-gray-700">Require property owner email/property ID</span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1">Students must provide landlord/property information</p>
+                    </div>
+                </div>
+            </div>
+
+                <div class="flex justify-end pt-3">
+                    <button type="button" onclick="nextStep()" id="btn-next-1" class="flex items-center px-4 py-2 rounded-lg text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-lg">
+                        Continue to Design <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: QUESTION DESIGN -->
+        <div class="step-content" id="step-2">
+            <div class="space-y-3 w-full">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">2. Question Design</h2>
+                    <p class="text-sm text-gray-600">Organize your survey into sections and add structured questions.</p>
+                </div>
+                
+                <div id="sections-container" class="space-y-4 w-full">
+                {% if survey and sections %}
+                    {% for section in sections %}
+                    {% with section_color=section.color|default:"#818cf8" %}
+                    <div class="section-card" data-section-id="{{ section.id }}" data-section-color="{{ section_color }}">
+                        <div class="flex justify-between items-center mb-2 border-b-2 pb-2" style="border-color: {{ section_color }};">
+                            <div class="flex items-center space-x-2">
+                                <h2 class="text-base font-bold" style="color: {{ section_color }};">Section {{ forloop.counter }}</h2>
+                                <div class="flex items-center space-x-1">
+                                    <label class="text-xs text-gray-600">Color:</label>
+                                    <input type="color" value="{{ section_color }}" onchange="updateSectionColor(this)" 
+                                           class="w-6 h-6 border border-gray-300 rounded cursor-pointer" 
+                                           title="Choose section color">
+                                </div>
+                            </div>
+                            <button type="button" onclick="removeSection(this)" class="text-red-500 hover:text-red-700 transition flex items-center text-xs font-semibold">
+                                <i class="fas fa-trash mr-1"></i> Remove
+                            </button>
+                        </div>
+                        <input type="text" name="section_title_{{ section.id }}" value="{{ section.title }}" placeholder="Section Title" required
+                               class="w-full text-base font-semibold mb-3 p-2 border-b-2 focus:border-teal-500 transition" style="border-color: {{ section_color }};">
+                    {% endwith %}
+                        
+                        <div class="questions-container space-y-3">
+                            {% for question in section.questions.all %}
+                            <div class="question-item p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-inner">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="text-sm font-semibold text-gray-700">Question {{ forloop.counter }}</h4>
+                                    <button type="button" onclick="removeQuestion(this)" class="text-red-400 hover:text-red-600 transition text-xs">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <textarea name="question_text_{{ question.id }}" placeholder="Enter question text" required rows="2"
+                                          class="w-full p-2 border border-gray-300 rounded-md mb-2 text-sm focus:ring-teal-500">{{ question.text }}</textarea>
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <label class="text-xs font-medium text-gray-700">Answer Type:</label>
+                                    <select name="question_type_{{ question.id }}" onchange="handleQuestionTypeChange(this)" class="p-1.5 border border-gray-300 rounded-md bg-white text-xs">
+                                        <option value="text_short" {% if question.question_type == 'text_short' %}selected{% endif %}>Text (Short Answer)</option>
+                                        <option value="text_long" {% if question.question_type == 'text_long' %}selected{% endif %}>Paragraph (Long Answer)</option>
+                                        <option value="multiple_choice" {% if question.question_type == 'multiple_choice' %}selected{% endif %}>Multiple Choice (Single Select)</option>
+                                        <option value="checkbox" {% if question.question_type == 'checkbox' %}selected{% endif %}>Select Multiple (Checkboxes)</option>
+                                        <option value="rating" {% if question.question_type == 'rating' %}selected{% endif %}>Rating (1-5 Stars)</option>
+                                    </select>
+                                </div>
+                                {% if question.question_type == 'multiple_choice' or question.question_type == 'checkbox' %}
+                                <div class="options-container mt-2 p-2 bg-indigo-50 border border-indigo-200 rounded-lg relative">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <h4 class="text-xs font-semibold text-indigo-700">Define Options</h4>
+                                        <button type="button" onclick="removeOptionsContainer(this)" class="text-red-500 hover:text-red-700 transition p-0.5 text-xs" title="Remove options container">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        {% for option in question.options %}
+                                        <div class="flex items-center space-x-1.5">
+                                            <span class="text-gray-500 text-xs">{% if question.question_type == 'multiple_choice' %}○{% else %}☐{% endif %}</span>
+                                            <input type="text" value="{{ option }}" placeholder="Option" class="flex-1 p-1.5 border border-gray-300 rounded-md text-xs focus:ring-teal-500">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); removeOption(this); return false;" class="p-0.5 text-red-500 hover:text-red-700 transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <button type="button" class="add-option-btn flex items-center text-teal-600 hover:text-teal-800 transition text-xs font-medium mt-1.5">
+                                        <i class="fas fa-plus-circle mr-1 text-xs"></i> Add Option
+                                    </button>
+                                </div>
+                                {% endif %}
+                                <label class="flex items-center mt-1.5">
+                                    <input type="checkbox" name="question_required_{{ question.id }}" {% if question.is_required %}checked{% endif %}
+                                           class="w-3 h-3 text-indigo-600 border-gray-300 rounded">
+                                    <span class="ml-1.5 text-xs text-gray-700">Required</span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-3 pt-2 border-t border-dashed border-gray-300 flex flex-wrap gap-2">
+                            <h5 class="w-full text-xs font-medium text-gray-700">Add Question:</h5>
+                            <button type="button" onclick="addQuestion(this, 'text_short')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-font mr-1 text-xs"></i> Text
+                            </button>
+                            <button type="button" onclick="addQuestion(this, 'text_long')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-align-left mr-1 text-xs"></i> Paragraph
+                            </button>
+                            <button type="button" onclick="addQuestion(this, 'multiple_choice')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-dot-circle mr-1 text-xs"></i> Multiple Choice
+                            </button>
+                            <button type="button" onclick="addQuestion(this, 'checkbox')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-check-square mr-1 text-xs"></i> Checkboxes
+                            </button>
+                            <button type="button" onclick="addQuestion(this, 'rating')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-star mr-1 text-xs"></i> Rating
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% else %}
+                    <!-- Default section -->
+                    <div class="section-card" data-section-id="new-1" data-section-color="#818cf8">
+                        <div class="flex justify-between items-center mb-2 border-b-2 pb-2" style="border-color: #818cf8;">
+                            <div class="flex items-center space-x-2">
+                                <h2 class="text-base font-bold" style="color: #818cf8;">Section 1</h2>
+                                <div class="flex items-center space-x-1">
+                                    <label class="text-xs text-gray-600">Color:</label>
+                                    <input type="color" value="#818cf8" onchange="updateSectionColor(this)" 
+                                           class="w-6 h-6 border border-gray-300 rounded cursor-pointer" 
+                                           title="Choose section color">
+                                </div>
+                            </div>
+                            <button type="button" onclick="removeSection(this)" class="text-red-500 hover:text-red-700 transition flex items-center text-xs font-semibold">
+                                <i class="fas fa-trash mr-1"></i> Remove
+                            </button>
+                        </div>
+                        <input type="text" name="section_title_new-1" value="Personal Information" placeholder="Section Title" required
+                               class="w-full text-base font-semibold mb-3 p-2 border-b-2 focus:border-teal-500 transition" style="border-color: #818cf8;">
+                        <div class="questions-container space-y-3"></div>
+                        <div class="mt-3 pt-2 border-t border-dashed border-gray-300 flex flex-wrap gap-2">
+                            <h5 class="w-full text-xs font-medium text-gray-700">Add Question:</h5>
+                            <button type="button" onclick="addQuestion(this, 'text_short')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-font mr-1 text-xs"></i> Text
+                            </button>
+                            <button type="button" onclick="addQuestion(this, 'text_long')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-align-left mr-1 text-xs"></i> Paragraph
+                            </button>
+                            <button type="button" onclick="addQuestion(this, 'multiple_choice')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-dot-circle mr-1 text-xs"></i> Multiple Choice
+                            </button>
+                            <button type="button" onclick="addQuestion(this, 'checkbox')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-check-square mr-1 text-xs"></i> Checkboxes
+                            </button>
+                            <button type="button" onclick="addQuestion(this, 'rating')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                                <i class="fas fa-star mr-1 text-xs"></i> Rating
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+                <!-- Add Section Button -->
+                <div class="mt-10 flex justify-center">
+                    <button type="button" onclick="addSection()" class="flex items-center px-6 py-3 rounded-xl font-bold text-lg bg-indigo-500 text-white hover:bg-indigo-600 transition shadow-lg">
+                        <i class="fas fa-th-large mr-2"></i> Add New Section
+                    </button>
+                </div>
+                
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between pt-6 border-t border-gray-200 mt-6">
+                    <button type="button" onclick="prevStep()" class="flex items-center px-4 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">
+                        <i class="fas fa-chevron-left mr-2"></i> Back to Setup
+                    </button>
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="previewSurvey()" class="flex items-center px-4 py-2 rounded-lg font-semibold bg-teal-500 text-white hover:bg-teal-600 shadow-md">
+                            <i class="fas fa-eye mr-2"></i> Preview Survey
+                        </button>
+                        <button type="button" onclick="event.preventDefault(); event.stopPropagation(); nextStep(); return false;" id="btn-next-2" class="flex items-center px-4 py-2 rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md">
+                            Review & Publish <i class="fas fa-chevron-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: REVIEW & SAVE -->
+        <div class="step-content" id="step-3">
+            <div class="space-y-6 w-full">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-check-circle mr-2 text-teal-600"></i> 3. Review & Publish
+                    </h2>
+                    <p class="text-gray-600">Review your survey structure before saving it to the database.</p>
+                </div>
+                
+                <!-- General Info Review -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border-b-4 border-indigo-500 w-full">
+                <h3 class="text-xl font-bold text-indigo-700 mb-3">Survey Details</h3>
+                <p class="text-3xl font-extrabold text-gray-900" id="review-title"></p>
+                <p class="text-gray-600 mt-2 italic" id="review-description"></p>
+                <div class="mt-4 flex space-x-4 text-sm">
+                    <span class="px-3 py-1 bg-gray-100 rounded-full font-semibold" id="review-category"></span>
+                    <span class="px-3 py-1 rounded-full font-semibold" id="review-status"></span>
+                </div>
+                
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Update Status:</label>
+                    <select name="status" id="review-status-select" class="mt-1 block max-w-sm p-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm">
+                        <option value="draft">Draft</option>
+                        <option value="active">Active (Ready to be published)</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+
+                <!-- Questions Review -->
+                <div class="space-y-8 mt-8 w-full">
+                    <h3 class="text-xl font-bold text-indigo-700 border-b pb-2">Survey Content</h3>
+                    <div id="review-sections" class="space-y-4 w-full"></div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between pt-6 border-t border-gray-200 mt-6">
+                    <button type="button" onclick="prevStep()" class="flex items-center px-4 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">
+                        <i class="fas fa-chevron-left mr-2"></i> Back to Design
+                    </button>
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="previewSurvey()" class="flex items-center px-4 py-2 rounded-lg font-semibold bg-teal-500 text-white hover:bg-teal-600 shadow-md">
+                            <i class="fas fa-eye mr-2"></i> Preview Survey
+                        </button>
+                        <button type="submit" class="flex items-center px-6 py-3 rounded-xl font-bold text-lg bg-teal-600 text-white hover:bg-teal-700 shadow-lg">
+                            <i class="fas fa-save mr-2"></i> Save & Finish
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</form>
+
+<!-- Preview Modal -->
+<div id="preview-modal" class="preview-modal">
+    <div class="preview-content">
+        <button onclick="closePreview()" class="preview-close" title="Close Preview">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 1; min-width: 0;">
+                <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <h2 class="text-2xl font-bold text-gray-900 break-words" id="preview-title" style="word-break: break-word; overflow-wrap: break-word; max-width: 100%;">Survey Preview</h2>
+                    <span id="preview-category" class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700" style="display:none;">Category</span>
+                </div>
+                <p class="text-gray-600 mt-1 break-words" id="preview-description" style="word-break: break-word; overflow-wrap: break-word; max-width: 100%; white-space: normal; line-height: 1.6;">This is how students will see your survey</p>
+            </div>
+            <div id="preview-back-button-container" style="display: none; flex-shrink: 0;">
+                <a href="{% url 'admin_panel:survey_list' %}" class="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition">
+                    <i class="fas fa-arrow-left mr-1"></i>Back
+                </a>
+            </div>
+        </div>
+        <div id="preview-body" class="space-y-6">
+            <!-- Preview content will be inserted here -->
+        </div>
+    </div>
+</div>
+
+<script>
+let currentStep = 1;
+let sectionCounter = {{ sections|length|default:1 }};
+let questionCounter = {};
+
+// Initialize question counters and section numbers
+document.querySelectorAll('.section-card').forEach((section, index) => {
+    const sectionId = section.dataset.sectionId;
+    const questionCount = section.querySelectorAll('.question-item').length;
+    questionCounter[sectionId] = questionCount || 0;
+    
+    // Update section number to be sequential
+    const sectionTitle = section.querySelector('h2.text-base');
+    if (sectionTitle) {
+        sectionTitle.textContent = `Section ${index + 1}`;
+    }
+    
+    // Apply section color on page load
+    const sectionColor = section.getAttribute('data-section-color');
+    if (sectionColor) {
+        applySectionColor(section, sectionColor);
+    }
+});
+
+// Update section counter based on current sections
+sectionCounter = document.querySelectorAll('.section-card').length || 1;
+
+function updateStepIndicator(step) {
+    // Reset all indicators
+    for (let i = 1; i <= 3; i++) {
+        const indicator = document.getElementById(`step-indicator-${i}`);
+        const label = indicator.querySelector('span');
+        
+        indicator.classList.remove('active', 'completed');
+        label.classList.remove('text-gray-900');
+        label.classList.add('text-gray-500');
+    }
+    
+    // Update current and previous steps
+    for (let i = 1; i <= step; i++) {
+        const indicator = document.getElementById(`step-indicator-${i}`);
+        const label = indicator.querySelector('span');
+        
+        if (i < step) {
+            indicator.classList.add('completed');
+            label.classList.remove('text-gray-500');
+            label.classList.add('text-gray-900');
+        } else if (i === step) {
+            indicator.classList.add('active');
+            label.classList.remove('text-gray-500');
+            label.classList.add('text-gray-900');
+        }
+    }
+}
+
+function showStep(step) {
+    // Hide all steps
+    document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+    
+    // Show current step
+    document.getElementById(`step-${step}`).classList.add('active');
+    
+    // Update indicator
+    updateStepIndicator(step);
+    
+    // Update review if on step 3
+    if (step === 3) {
+        updateReview();
+    }
+}
+
+function nextStep() {
+    console.log('nextStep called, currentStep:', currentStep);
+    
+    try {
+        // Validate current step
+        if (currentStep === 1) {
+            const title = document.getElementById('survey-title').value.trim();
+            if (!title) {
+                alert('Survey Title is required before proceeding.');
+                return;
+            }
+        } else if (currentStep === 2) {
+        // Check if at least one section has at least one question
+        const hasQuestions = Array.from(document.querySelectorAll('.section-card')).some(section => {
+            return section.querySelectorAll('.question-item').length > 0;
+        });
+        if (!hasQuestions) {
+            alert('Please add at least one question to your survey before proceeding.');
+            return;
+        }
+        
+        // Validate all questions have proper options if needed
+        let validationError = '';
+        const questions = Array.from(document.querySelectorAll('.question-item'));
+        
+        for (let index = 0; index < questions.length; index++) {
+            const question = questions[index];
+            
+            // Find question type select - try multiple selectors with more fallbacks
+            let questionSelect = null;
+            
+            // Try multiple selector patterns
+            questionSelect = question.querySelector('select[name^="question_type"]');
+            if (!questionSelect) {
+                questionSelect = question.querySelector('select[name*="question_type"]');
+            }
+            if (!questionSelect) {
+                questionSelect = question.querySelector('select');
+            }
+            if (!questionSelect) {
+                // Last resort: find any select element within the question item
+                const allSelects = question.getElementsByTagName('select');
+                if (allSelects.length > 0) {
+                    questionSelect = allSelects[0];
+                }
+            }
+            
+            // Skip validation if select not found - assume it's a valid question type
+            // This prevents false errors when questions are loaded from database
+            const questionType = questionSelect ? questionSelect.value : 'text_short';
+            
+            // Find question text - try multiple selectors
+            const questionTextarea = question.querySelector('textarea[name^="question_text"]') || 
+                                   question.querySelector('textarea');
+            // Skip validation if textarea not found - assume it has text
+            // This prevents false errors when questions are loaded from database
+            const questionText = questionTextarea ? questionTextarea.value.trim() : `Question ${index + 1}`;
+            
+            if (questionType === 'multiple_choice' || questionType === 'checkbox') {
+                // Find options container - handle the space-y-1.5 selector issue
+                let optionsContainer = question.querySelector('.options-container');
+                if (!optionsContainer) {
+                    validationError = `Question "${questionText || 'Untitled question ' + (index + 1)}" is missing options.`;
+                    break;
+                }
+                
+                // Find the container that holds the options (handle space-y-1.5 selector)
+                let optionsListContainer = null;
+                try {
+                    optionsListContainer = optionsContainer.querySelector('[class*="space-y-1.5"]');
+                } catch (e) {
+                    const allDivs = optionsContainer.getElementsByTagName('div');
+                    for (let div of allDivs) {
+                        if (div.classList && div.classList.contains('space-y-1.5')) {
+                            optionsListContainer = div;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!optionsListContainer) {
+                    try {
+                        optionsListContainer = optionsContainer.querySelector('[class*="space-y-2"]');
+                    } catch (e) {
+                        const allDivs = optionsContainer.getElementsByTagName('div');
+                        for (let div of allDivs) {
+                            if (div.classList && div.classList.contains('space-y-2')) {
+                                optionsListContainer = div;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!optionsListContainer) {
+                    // Fallback: look for any div containing option inputs
+                    const allDivs = optionsContainer.querySelectorAll('div');
+                    for (let div of allDivs) {
+                        if (div.querySelector('.flex.items-center input[type="text"]')) {
+                            optionsListContainer = div;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!optionsListContainer) {
+                    validationError = `Question "${questionText || 'Untitled question ' + (index + 1)}" is missing options container.`;
+                    break;
+                }
+                
+                const allOptions = Array.from(optionsListContainer.querySelectorAll('input[type="text"]'));
+                const filledOptions = allOptions.filter(opt => opt.value.trim());
+                const emptyOptions = [];
+                
+                allOptions.forEach((opt, optIdx) => {
+                    if (!opt.value.trim()) {
+                        emptyOptions.push(optIdx + 1);
+                    }
+                });
+                
+                if (filledOptions.length < 2) {
+                    validationError = `Question "${questionText || 'Untitled question ' + (index + 1)}" needs at least 2 filled options.`;
+                    break;
+                }
+                
+                // Validate ALL options are filled before proceeding
+                if (emptyOptions.length > 0) {
+                    validationError = `Question "${questionText || 'Untitled question ' + (index + 1)}" has empty options (Option ${emptyOptions.join(', ')}). Please fill all options before proceeding.`;
+                    break;
+                }
+            }
+        }
+        
+        if (validationError) {
+            alert(validationError);
+            return;
+        }
+    }
+    
+    if (currentStep < 3) {
+        currentStep++;
+        console.log('Moving to step:', currentStep);
+        showStep(currentStep);
+    } else {
+        console.log('Already at final step');
+    }
+    } catch (error) {
+        console.error('Error in nextStep:', error, error.stack);
+        alert('An error occurred: ' + error.message);
+    }
+}
+
+function prevStep() {
+    if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+    }
+}
+
+function addSection() {
+    // Get current number of sections to determine next sequential number
+    const currentSections = document.querySelectorAll('.section-card').length;
+    const nextSectionNumber = currentSections + 1;
+    sectionCounter = nextSectionNumber;
+    
+    const sectionId = `new-${sectionCounter}`;
+    questionCounter[sectionId] = 0;
+    
+    // Generate a random color from a predefined palette
+    const colors = ['#818cf8', '#34d399', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7', '#ec4899', '#14b8a6'];
+    const randomColor = colors[(nextSectionNumber - 1) % colors.length];
+    
+    const sectionHTML = `
+        <div class="section-card" data-section-id="${sectionId}" data-section-color="${randomColor}">
+            <div class="flex justify-between items-center mb-2 border-b-2 pb-2" style="border-color: ${randomColor};">
+                <div class="flex items-center space-x-2">
+                    <h2 class="text-base font-bold" style="color: ${randomColor};">Section ${nextSectionNumber}</h2>
+                    <div class="flex items-center space-x-1">
+                        <label class="text-xs text-gray-600">Color:</label>
+                        <input type="color" value="${randomColor}" onchange="updateSectionColor(this)" 
+                               class="w-6 h-6 border border-gray-300 rounded cursor-pointer" 
+                               title="Choose section color">
+                    </div>
+                </div>
+                <button type="button" onclick="removeSection(this)" class="text-red-500 hover:text-red-700 transition flex items-center text-xs font-semibold">
+                    <i class="fas fa-trash mr-1"></i> Remove
+                </button>
+            </div>
+            <input type="text" name="section_title_${sectionId}" placeholder="Section Title" required
+                   class="w-full text-base font-semibold mb-3 p-2 border-b-2 focus:border-teal-500 transition" style="border-color: ${randomColor};">
+            <div class="questions-container space-y-3"></div>
+            <div class="mt-3 pt-2 border-t border-dashed border-gray-300 flex flex-wrap gap-2">
+                <h5 class="w-full text-xs font-medium text-gray-700">Add Question:</h5>
+                <button type="button" onclick="addQuestion(this, 'text_short')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                    <i class="fas fa-font mr-1 text-xs"></i> Text
+                </button>
+                <button type="button" onclick="addQuestion(this, 'text_long')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                    <i class="fas fa-align-left mr-1 text-xs"></i> Paragraph
+                </button>
+                <button type="button" onclick="addQuestion(this, 'multiple_choice')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                    <i class="fas fa-dot-circle mr-1 text-xs"></i> Multiple Choice
+                </button>
+                <button type="button" onclick="addQuestion(this, 'checkbox')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                    <i class="fas fa-check-square mr-1 text-xs"></i> Checkboxes
+                </button>
+                <button type="button" onclick="addQuestion(this, 'rating')" class="flex items-center px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition shadow-sm border border-teal-200">
+                    <i class="fas fa-star mr-1 text-xs"></i> Rating
+                </button>
+            </div>
+        </div>
+    `;
+    
+    const sectionsContainer = document.getElementById('sections-container');
+    sectionsContainer.insertAdjacentHTML('beforeend', sectionHTML);
+    
+    // Apply color to the newly created section
+    const newSection = sectionsContainer.lastElementChild;
+    if (newSection) {
+        applySectionColor(newSection, randomColor);
+    }
+}
+
+function removeSection(button) {
+    if (confirm('Are you sure you want to remove this section and all its questions?')) {
+        button.closest('.section-card').remove();
+        // Renumber all sections sequentially
+        updateSectionNumbers();
+    }
+}
+
+function updateSectionNumbers() {
+    const sections = document.querySelectorAll('.section-card');
+    sections.forEach((section, index) => {
+        const sectionTitle = section.querySelector('h2.text-xl');
+        if (sectionTitle) {
+            sectionTitle.textContent = `Section ${index + 1}`;
+        }
+    });
+}
+
+function addQuestion(button, type) {
+    const section = button.closest('.section-card');
+    const sectionId = section.dataset.sectionId;
+    questionCounter[sectionId] = (questionCounter[sectionId] || 0) + 1;
+    const qNum = questionCounter[sectionId];
+    
+    const typeLabels = {
+        'text_short': 'Text (Short Answer)',
+        'text_long': 'Paragraph (Long Answer)',
+        'multiple_choice': 'Multiple Choice (Single Select)',
+        'checkbox': 'Select Multiple (Checkboxes)',
+        'rating': 'Rating (1-5 Stars)'
+    };
+    
+    const needsOptions = type === 'multiple_choice' || type === 'checkbox';
+    const optionsHTML = needsOptions ? `
+        <div class="options-container mt-2 p-2 bg-indigo-50 border border-indigo-200 rounded-lg relative">
+            <div class="flex justify-between items-center mb-1">
+                <h4 class="text-xs font-semibold text-indigo-700">Define Options</h4>
+                <button type="button" onclick="removeOptionsContainer(this)" class="text-red-500 hover:text-red-700 transition p-0.5 text-xs" title="Remove options container">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-1.5">
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-gray-500 text-xs">${type === 'multiple_choice' ? '○' : '☐'}</span>
+                    <input type="text" placeholder="Option 1" class="flex-1 p-1.5 border border-gray-300 rounded-md text-xs focus:ring-teal-500">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); removeOption(this); return false;" class="p-0.5 text-red-500 hover:text-red-700 transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-gray-500 text-xs">${type === 'multiple_choice' ? '○' : '☐'}</span>
+                    <input type="text" placeholder="Option 2" class="flex-1 p-1.5 border border-gray-300 rounded-md text-xs focus:ring-teal-500">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); removeOption(this); return false;" class="p-0.5 text-red-500 hover:text-red-700 transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+                </div>
+            </div>
+            <button type="button" class="add-option-btn flex items-center text-teal-600 hover:text-teal-800 transition text-xs font-medium mt-1.5">
+                <i class="fas fa-plus-circle mr-1 text-xs"></i> Add Option
+            </button>
+        </div>
+    ` : '';
+    
+    const questionHTML = `
+        <div class="question-item p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-inner">
+            <div class="flex justify-between items-start mb-1">
+                <h4 class="text-sm font-semibold text-gray-700">Question ${qNum}</h4>
+                <button type="button" onclick="removeQuestion(this)" class="text-red-400 hover:text-red-600 transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <textarea name="question_text_${sectionId}_${qNum}" placeholder="Enter question text" required rows="2"
+                      class="w-full p-2 border border-gray-300 rounded-md mb-2 text-sm focus:ring-teal-500"></textarea>
+            <div class="flex items-center space-x-2 mb-2">
+                <label class="text-xs font-medium text-gray-700">Answer Type:</label>
+                <select name="question_type_${sectionId}_${qNum}" onchange="handleQuestionTypeChange(this)" class="p-1.5 border border-gray-300 rounded-md bg-white text-xs">
+                    <option value="text_short" ${type === 'text_short' ? 'selected' : ''}>Text (Short Answer)</option>
+                    <option value="text_long" ${type === 'text_long' ? 'selected' : ''}>Paragraph (Long Answer)</option>
+                    <option value="multiple_choice" ${type === 'multiple_choice' ? 'selected' : ''}>Multiple Choice (Single Select)</option>
+                    <option value="checkbox" ${type === 'checkbox' ? 'selected' : ''}>Select Multiple (Checkboxes)</option>
+                    <option value="rating" ${type === 'rating' ? 'selected' : ''}>Rating (1-5 Stars)</option>
+                </select>
+            </div>
+            ${optionsHTML}
+            <label class="flex items-center mt-1.5">
+                <input type="checkbox" name="question_required_${sectionId}_${qNum}" checked
+                       class="w-3 h-3 text-indigo-600 border-gray-300 rounded">
+                <span class="ml-1.5 text-xs text-gray-700">Required</span>
+            </label>
+        </div>
+    `;
+    
+    section.querySelector('.questions-container').insertAdjacentHTML('beforeend', questionHTML);
+}
+
+function removeQuestion(button) {
+    button.closest('.question-item').remove();
+}
+
+function updateSectionColor(colorInput) {
+    const sectionCard = colorInput.closest('.section-card');
+    const color = colorInput.value;
+    
+    // Use applySectionColor to ensure all elements are updated
+    applySectionColor(sectionCard, color);
+}
+
+// Function to apply color to a section when it's created
+function applySectionColor(sectionCard, color) {
+    if (!sectionCard || !color) return;
+    
+    // Update data attribute
+    sectionCard.setAttribute('data-section-color', color);
+    
+    // Update ALL border colors
+    sectionCard.style.borderColor = color;
+    
+    // Update header border
+    const header = sectionCard.querySelector('.flex.justify-between');
+    if (header) {
+        header.style.borderColor = color;
+    }
+    
+    // Update section title color (try both text-xl and text-base)
+    const title = sectionCard.querySelector('h2.text-base') || sectionCard.querySelector('h2.text-xl');
+    if (title) {
+        title.style.color = color;
+    }
+    
+    // Update input border color
+    const titleInput = sectionCard.querySelector('input[name^="section_title"]');
+    if (titleInput) {
+        titleInput.style.borderColor = color;
+    }
+}
+
+function handleQuestionTypeChange(select) {
+    const questionItem = select.closest('.question-item');
+    if (!questionItem) return;
+    
+    const newType = select.value;
+    const needsOptions = newType === 'multiple_choice' || newType === 'checkbox';
+    const symbol = newType === 'multiple_choice' ? '○' : '☐';
+    
+    // Check if we're switching between two option types (multiple_choice <-> checkbox)
+    const allExistingContainers = Array.from(questionItem.querySelectorAll('.options-container'));
+    const existingContainer = allExistingContainers.length === 1 ? allExistingContainers[0] : null;
+    
+    // If switching between multiple_choice and checkbox AND only ONE container exists, just update
+    if (needsOptions && existingContainer && allExistingContainers.length === 1) {
+        const oldSymbol = existingContainer.querySelector('.text-gray-500')?.textContent;
+        const oldType = oldSymbol === '○' ? 'multiple_choice' : (oldSymbol === '☐' ? 'checkbox' : null);
+        
+        if (oldType && ((oldType === 'multiple_choice' && newType === 'checkbox') || 
+                        (oldType === 'checkbox' && newType === 'multiple_choice'))) {
+            // Just update symbols, don't remove and recreate
+            existingContainer.querySelectorAll('.text-gray-500').forEach(span => {
+                span.textContent = symbol;
+            });
+            return; // Done - no need to remove or recreate
+        }
+    }
+    
+    // If there are multiple containers or switching from/to non-option types, remove all and recreate
+    
+    // STEP 1: PRESERVE existing option values BEFORE removing containers
+    let preservedOptions = [];
+    const containersByClass = Array.from(questionItem.querySelectorAll('.options-container'));
+    if (containersByClass.length > 0) {
+        // Get option values from the FIRST container before removing
+        const firstContainer = containersByClass[0];
+        const optionInputs = firstContainer.querySelectorAll('input[type="text"]');
+        optionInputs.forEach(input => {
+            if (input.value && input.value.trim()) {
+                preservedOptions.push(input.value.trim());
+            }
+        });
+    }
+    
+    // STEP 2: ALWAYS remove ALL existing options containers (ULTRA-AGGRESSIVE removal)
+    // Use multiple passes to ensure we catch everything
+    
+    // Pass 1: Remove ALL .options-container by class name
+    let allContainers = Array.from(questionItem.querySelectorAll('.options-container'));
+    allContainers.forEach(container => container.remove());
+    
+    // Pass 2: Remove ALL divs that contain "Define Options" text (more aggressive)
+    let allDivs = Array.from(questionItem.querySelectorAll('div'));
+    allDivs.forEach(div => {
+        const text = div.textContent || '';
+        if (text.includes('Define Options')) {
+            // Check for multiple indicators that this is an options container
+            const hasIndigoBg = div.classList.contains('bg-indigo-50');
+            const hasOptionInput = div.querySelector('input[placeholder*="Option"]') || 
+                                  div.querySelector('input[type="text"]');
+            const hasAddButton = text.includes('Add Option');
+            const hasOptionSymbols = div.querySelector('.text-gray-500');
+            
+            if (hasIndigoBg || (hasOptionInput && hasAddButton) || hasOptionSymbols) {
+                div.remove();
+            }
+        }
+    });
+    
+    // Pass 3: Remove ALL divs with .bg-indigo-50 that have option-related content
+    let indigoDivs = Array.from(questionItem.querySelectorAll('.bg-indigo-50'));
+    indigoDivs.forEach(div => {
+        const text = div.textContent || '';
+        const hasOptionInput = div.querySelector('input[placeholder*="Option"]') || 
+                              div.querySelector('input[type="text"]');
+        const hasAddButton = text.includes('Add Option');
+        const hasDefineOptions = text.includes('Define Options');
+        const hasOptionSymbol = div.querySelector('.text-gray-500');
+        
+        if ((hasOptionInput || hasAddButton || hasDefineOptions) && hasOptionSymbol) {
+            div.remove();
+        }
+    });
+    
+    // Pass 4: Remove any div that has the exact structure of an options container
+    allDivs = Array.from(questionItem.querySelectorAll('div'));
+    allDivs.forEach(div => {
+        const hasHeading = div.querySelector('h4') && div.querySelector('h4').textContent.includes('Define Options');
+        const hasOptionsDiv = div.querySelector('.space-y-2');
+        const hasAddOptionBtn = div.textContent && div.textContent.includes('Add Option');
+        const hasMultipleInputs = div.querySelectorAll('input[type="text"]').length >= 2;
+        
+        if (hasHeading && hasOptionsDiv && hasAddOptionBtn && hasMultipleInputs) {
+            div.remove();
+        }
+    });
+    
+    // Pass 5: Final nuclear sweep - remove ANY remaining .options-container
+    allContainers = Array.from(questionItem.querySelectorAll('.options-container'));
+    allContainers.forEach(container => container.remove());
+    
+    // Pass 6: One more sweep for any div with "Define Options" that we might have missed
+    allDivs = Array.from(questionItem.querySelectorAll('div'));
+    allDivs.forEach(div => {
+        if (div.textContent && div.textContent.includes('Define Options')) {
+            const hasInputs = div.querySelectorAll('input[type="text"]').length > 0;
+            const hasButtons = div.querySelectorAll('button').length > 0;
+            if (hasInputs && hasButtons) {
+                div.remove();
+            }
+        }
+    });
+    
+    // STEP 3: Now create exactly ONE container if needed
+    if (needsOptions) {
+        // Final verification: absolutely no container should exist at this point
+        let verifyNoContainer = questionItem.querySelector('.options-container');
+        if (verifyNoContainer) {
+            verifyNoContainer.remove();
+        }
+        
+        // Also check for any div with "Define Options" text
+        allDivs = Array.from(questionItem.querySelectorAll('div'));
+        const foundDiv = allDivs.find(div => {
+            return div.textContent && div.textContent.includes('Define Options') && 
+                   (div.querySelector('input[type="text"]') || div.querySelector('button'));
+        });
+        if (foundDiv) {
+            foundDiv.remove();
+        }
+        
+        // Create exactly ONE new container
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'options-container mt-2 p-2 bg-indigo-50 border border-indigo-200 rounded-lg relative';
+        
+        // If we have preserved options, use them; otherwise use default placeholders
+        let optionsHTML = '';
+        if (preservedOptions.length > 0) {
+            // Use preserved options
+            preservedOptions.forEach((optValue, index) => {
+                optionsHTML += `
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-gray-500 text-xs">${symbol}</span>
+                        <input type="text" value="${optValue.replace(/"/g, '&quot;')}" placeholder="Option ${index + 1}" class="flex-1 p-1.5 border border-gray-300 rounded-md text-xs focus:ring-teal-500">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); removeOption(this); return false;" class="p-0.5 text-red-500 hover:text-red-700 transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+                    </div>
+                `;
+            });
+            // Ensure at least 2 options
+            while (preservedOptions.length < 2) {
+                optionsHTML += `
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-gray-500 text-xs">${symbol}</span>
+                        <input type="text" placeholder="Option ${preservedOptions.length + 1}" class="flex-1 p-1.5 border border-gray-300 rounded-md text-xs focus:ring-teal-500">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); removeOption(this); return false;" class="p-0.5 text-red-500 hover:text-red-700 transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+                    </div>
+                `;
+                preservedOptions.push('');
+            }
+        } else {
+            // Default: create 2 empty options
+            optionsHTML = `
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-gray-500 text-xs">${symbol}</span>
+                    <input type="text" placeholder="Option 1" class="flex-1 p-1.5 border border-gray-300 rounded-md text-xs focus:ring-teal-500">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); removeOption(this); return false;" class="p-0.5 text-red-500 hover:text-red-700 transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-gray-500 text-xs">${symbol}</span>
+                    <input type="text" placeholder="Option 2" class="flex-1 p-1.5 border border-gray-300 rounded-md text-xs focus:ring-teal-500">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); removeOption(this); return false;" class="p-0.5 text-red-500 hover:text-red-700 transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+                </div>
+            `;
+        }
+        
+        optionsContainer.innerHTML = `
+            <div class="flex justify-between items-center mb-1">
+                <h4 class="text-xs font-semibold text-indigo-700">Define Options</h4>
+                <button type="button" onclick="removeOptionsContainer(this)" class="text-red-500 hover:text-red-700 transition p-0.5 text-xs" title="Remove options container">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-1.5">
+                ${optionsHTML}
+            </div>
+            <button type="button" class="add-option-btn flex items-center text-teal-600 hover:text-teal-800 transition text-xs font-medium mt-1.5">
+                <i class="fas fa-plus-circle mr-1 text-xs"></i> Add Option
+            </button>
+        `;
+        
+        // Find the select container and insert after it
+        const selectContainer = select.closest('.flex.items-center.space-x-3');
+        if (selectContainer && selectContainer.parentElement) {
+            selectContainer.parentElement.insertAdjacentElement('afterend', optionsContainer);
+        } else {
+            // Fallback: find the required checkbox and insert before it
+            const requiredCheckbox = questionItem.querySelector('label.flex.items-center');
+            if (requiredCheckbox) {
+                requiredCheckbox.insertAdjacentElement('beforebegin', optionsContainer);
+            } else {
+                // Final fallback: append to question item
+                questionItem.appendChild(optionsContainer);
+            }
+        }
+    } else {
+        // Type doesn't need options - ensure ALL containers are removed
+        // Do one final aggressive sweep to make absolutely sure nothing remains
+        let finalContainers = Array.from(questionItem.querySelectorAll('.options-container'));
+        finalContainers.forEach(container => container.remove());
+        
+        // Remove any div with "Define Options"
+        let finalDivs = Array.from(questionItem.querySelectorAll('div'));
+        finalDivs.forEach(div => {
+            if (div.textContent && div.textContent.includes('Define Options')) {
+                const hasInputs = div.querySelectorAll('input[type="text"]').length > 0;
+                const hasButtons = div.querySelectorAll('button').length > 0;
+                if (hasInputs || hasButtons) {
+                    div.remove();
+                }
+            }
+        });
+        
+        // Final verification - absolutely no options container should exist
+        const lastCheck = questionItem.querySelector('.options-container');
+        if (lastCheck) {
+            lastCheck.remove();
+        }
+    }
+}
+
+function addOption(button) {
+    console.log('addOption called with button:', button);
+    
+    try {
+        if (!button) {
+            alert('Error: Button not found.');
+            return false;
+        }
+        
+        // Find the options container
+        let optionsContainer = button.closest('.options-container');
+        
+        if (!optionsContainer) {
+            // Try traversing up
+            let parent = button.parentElement;
+            for (let i = 0; i < 10 && parent; i++) {
+                if (parent.classList && parent.classList.contains('options-container')) {
+                    optionsContainer = parent;
+                    break;
+                }
+                parent = parent.parentElement;
+            }
+        }
+        
+        if (!optionsContainer) {
+            console.error('Could not find options container');
+            alert('Error: Could not find options container. Please try refreshing the page.');
+            return false;
+        }
+        
+        console.log('Found options container:', optionsContainer);
+        
+        // Get the symbol from existing options
+        let symbol = '○';
+        const firstOptionRow = optionsContainer.querySelector('.flex.items-center');
+        if (firstOptionRow) {
+            const symbolSpan = firstOptionRow.querySelector('.text-gray-500');
+            if (symbolSpan) {
+                symbol = symbolSpan.textContent.trim() || '○';
+            }
+        }
+        
+        console.log('Using symbol:', symbol);
+        
+        // Find the container div that holds all option rows
+        // Note: space-y-1.5 contains a dot, so we need to escape it or use getElementsByClassName
+        let optionsListContainer = null;
+        
+        // Method 1: Try to find by class name (escape the dot)
+        try {
+            optionsListContainer = optionsContainer.querySelector('[class*="space-y-1.5"]');
+        } catch (e) {
+            // If that fails, try getElementsByClassName approach
+            const allDivs = optionsContainer.getElementsByTagName('div');
+            for (let div of allDivs) {
+                if (div.classList && div.classList.contains('space-y-1.5')) {
+                    optionsListContainer = div;
+                    break;
+                }
+            }
+        }
+        
+        // Method 2: Try space-y-2
+        if (!optionsListContainer) {
+            try {
+                optionsListContainer = optionsContainer.querySelector('[class*="space-y-2"]');
+            } catch (e) {
+                const allDivs = optionsContainer.getElementsByTagName('div');
+                for (let div of allDivs) {
+                    if (div.classList && div.classList.contains('space-y-2')) {
+                        optionsListContainer = div;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Method 3: If still not found, look for any div containing option rows
+        if (!optionsListContainer) {
+            const allDivs = optionsContainer.querySelectorAll('div');
+            for (let div of allDivs) {
+                if (div.querySelector('.flex.items-center input[type="text"]') && 
+                    div !== optionsContainer && 
+                    !div.classList.contains('flex')) {
+                    optionsListContainer = div;
+                    break;
+                }
+            }
+        }
+        
+        if (!optionsListContainer) {
+            console.log('Creating new options list container');
+            // Create the container if it doesn't exist
+            optionsListContainer = document.createElement('div');
+            optionsListContainer.className = 'space-y-1.5';
+            // Insert it before the Add Option button
+            if (button.parentElement) {
+                button.parentElement.insertBefore(optionsListContainer, button);
+            } else {
+                optionsContainer.insertBefore(optionsListContainer, button);
+            }
+        }
+        
+        console.log('Found/created options list container:', optionsListContainer);
+        
+        // Count existing options
+        const existingCount = optionsListContainer.querySelectorAll('.flex.items-center').length;
+        const nextNum = existingCount + 1;
+        
+        console.log('Existing count:', existingCount, 'Next number:', nextNum);
+        
+        // Create new option HTML
+        const newOptionHTML = `
+            <div class="flex items-center space-x-1.5">
+                <span class="text-gray-500 text-xs">${symbol}</span>
+                <input type="text" placeholder="Option ${nextNum}" class="flex-1 p-1.5 border border-gray-300 rounded-md text-xs focus:ring-teal-500">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); removeOption(this); return false;" class="p-0.5 text-red-500 hover:text-red-700 transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        
+        // Add the new option
+        optionsListContainer.insertAdjacentHTML('beforeend', newOptionHTML);
+        console.log('Added new option HTML');
+        
+        // Focus on the new input
+        const newInput = optionsListContainer.lastElementChild.querySelector('input');
+        if (newInput) {
+            setTimeout(() => {
+                newInput.focus();
+                newInput.select();
+            }, 50);
+        }
+        
+        console.log('addOption completed successfully');
+        return true;
+    } catch (error) {
+        console.error('Error in addOption:', error, error.stack);
+        alert('An error occurred while adding the option: ' + error.message);
+        return false;
+    }
+}
+
+function removeOption(button) {
+    try {
+        const optionDiv = button.closest('.flex.items-center');
+        if (!optionDiv) {
+            return false;
+        }
+        
+        // Find the options container
+        const optionsContainer = button.closest('.options-container');
+        if (!optionsContainer) {
+            optionDiv.remove();
+            return true;
+        }
+        
+        // Find the container that holds all options
+        // Note: space-y-1.5 contains a dot, so we need to escape it or use getElementsByClassName
+        let spaceY2 = null;
+        
+        // Method 1: Try to find by class name using attribute selector
+        try {
+            spaceY2 = optionsContainer.querySelector('[class*="space-y-1.5"]');
+        } catch (e) {
+            // If that fails, use getElementsByClassName approach
+            const allDivs = optionsContainer.getElementsByTagName('div');
+            for (let div of allDivs) {
+                if (div.classList && div.classList.contains('space-y-1.5')) {
+                    spaceY2 = div;
+                    break;
+                }
+            }
+        }
+        
+        // Method 2: Try space-y-2
+        if (!spaceY2) {
+            try {
+                spaceY2 = optionsContainer.querySelector('[class*="space-y-2"]');
+            } catch (e) {
+                const allDivs = optionsContainer.getElementsByTagName('div');
+                for (let div of allDivs) {
+                    if (div.classList && div.classList.contains('space-y-2')) {
+                        spaceY2 = div;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (spaceY2) {
+            // Count ALL options including the one we're about to remove
+            const allOptions = spaceY2.querySelectorAll('.flex.items-center');
+            const currentCount = allOptions.length;
+            
+            // Check if removing would leave less than 2 options
+            if (currentCount <= 2) {
+                alert('Multiple choice and checkbox questions require at least 2 options. You cannot remove this option.');
+                return false;
+            }
+        }
+        
+        // Remove the option
+        optionDiv.remove();
+        return true;
+    } catch (error) {
+        console.error('Error in removeOption:', error);
+        return false;
+    }
+}
+
+function removeOptionsContainer(button) {
+    const optionsContainer = button.closest('.options-container');
+    if (!optionsContainer) return;
+    
+    // Find the question item and the answer type select
+    const questionItem = optionsContainer.closest('.question-item');
+    if (questionItem) {
+        const select = questionItem.querySelector('select');
+        if (select) {
+            // Change the answer type to something that doesn't need options
+            select.value = 'text_short';
+            // Trigger the change event to update the question type
+            select.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    // Remove the options container
+    optionsContainer.remove();
+}
+
+function updateReview() {
+    try {
+        // Update title
+        const titleEl = document.getElementById('survey-title');
+        const reviewTitleEl = document.getElementById('review-title');
+        if (titleEl && reviewTitleEl) {
+            reviewTitleEl.textContent = titleEl.value || 'Untitled Survey';
+        }
+        
+        // Update description
+        const descEl = document.getElementById('survey-description');
+        const reviewDescEl = document.getElementById('review-description');
+        if (descEl && reviewDescEl) {
+            reviewDescEl.textContent = descEl.value || 'No description provided.';
+        }
+        
+        // Update category
+        const categoryEl = document.getElementById('survey-category');
+        const reviewCategoryEl = document.getElementById('review-category');
+        if (categoryEl && reviewCategoryEl) {
+            reviewCategoryEl.textContent = 'Category: ' + (categoryEl.value || 'Uncategorized');
+        }
+        
+        // Update status
+        const statusEl = document.getElementById('survey-status');
+        const reviewStatusEl = document.getElementById('review-status');
+        const reviewStatusSelectEl = document.getElementById('review-status-select');
+        
+        if (statusEl && reviewStatusEl) {
+            const status = statusEl.value || 'draft';
+            reviewStatusEl.textContent = 'Status: ' + status.charAt(0).toUpperCase() + status.slice(1);
+            reviewStatusEl.className = 'px-3 py-1 rounded-full font-semibold ' + 
+                (status === 'active' ? 'bg-green-100 text-green-700' : status === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700');
+            
+            // Update status select
+            if (reviewStatusSelectEl) {
+                reviewStatusSelectEl.value = status;
+            }
+        }
+        
+        // Update sections review
+        const reviewSections = document.getElementById('review-sections');
+        if (!reviewSections) {
+            console.error('review-sections element not found');
+            return;
+        }
+        
+        reviewSections.innerHTML = '';
+        
+        document.querySelectorAll('.section-card').forEach((section, secIndex) => {
+            // Find section title input - try multiple selectors
+            const sectionTitleInput = section.querySelector('input[name^="section_title"]') || 
+                                     section.querySelector('input[type="text"]');
+            const sectionTitle = sectionTitleInput ? sectionTitleInput.value : `Section ${secIndex + 1}`;
+            
+            const questions = section.querySelectorAll('.question-item');
+            
+            const sectionHTML = `
+                <div class="p-5 bg-white rounded-xl shadow-md border-l-4 border-teal-500">
+                    <h4 class="text-xl font-bold text-teal-800 mb-4">${secIndex + 1}. ${sectionTitle}</h4>
+                    <div class="space-y-4 border-t pt-4">
+                        ${Array.from(questions).map((q, qIndex) => {
+                            // Find question text - try multiple selectors
+                            const questionTextarea = q.querySelector('textarea[name^="question_text"]') || 
+                                                   q.querySelector('textarea');
+                            const questionText = questionTextarea ? questionTextarea.value : 'Untitled question';
+                            
+                            // Find question type select
+                            const questionSelect = q.querySelector('select[name^="question_type"]') || 
+                                                 q.querySelector('select');
+                            const questionType = questionSelect ? questionSelect.value : 'text_short';
+                            
+                            const typeLabels = {
+                                'text_short': 'Text (Short Answer)',
+                                'text_long': 'Paragraph (Long Answer)',
+                                'multiple_choice': 'Multiple Choice (Single Select)',
+                                'checkbox': 'Select Multiple (Checkboxes)',
+                                'rating': 'Rating (1-5 Stars)'
+                            };
+                            
+                            // Find options - handle the space-y-1.5 selector issue
+                            let options = [];
+                            const optionsContainer = q.querySelector('.options-container');
+                            if (optionsContainer) {
+                                // Try to find the options list container
+                                let optionsListContainer = null;
+                                try {
+                                    optionsListContainer = optionsContainer.querySelector('[class*="space-y-1.5"]');
+                                } catch (e) {
+                                    const allDivs = optionsContainer.getElementsByTagName('div');
+                                    for (let div of allDivs) {
+                                        if (div.classList && div.classList.contains('space-y-1.5')) {
+                                            optionsListContainer = div;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (!optionsListContainer) {
+                                    try {
+                                        optionsListContainer = optionsContainer.querySelector('[class*="space-y-2"]');
+                                    } catch (e) {
+                                        const allDivs = optionsContainer.getElementsByTagName('div');
+                                        for (let div of allDivs) {
+                                            if (div.classList && div.classList.contains('space-y-2')) {
+                                                optionsListContainer = div;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                if (optionsListContainer) {
+                                    options = Array.from(optionsListContainer.querySelectorAll('input[type="text"]'));
+                                } else {
+                                    // Fallback: get all inputs from options container
+                                    options = Array.from(optionsContainer.querySelectorAll('input[type="text"]'));
+                                }
+                            }
+                            
+                            const optionsHTML = options.length > 0 ? `
+                                <ul class="list-disc list-inside text-sm text-gray-600 ml-4 mt-2">
+                                    ${options.map(opt => `<li>${opt.value || 'Empty option'}</li>`).join('')}
+                                </ul>
+                            ` : '';
+                            
+                            return `
+                                <div class="p-3 bg-gray-50 rounded-lg border">
+                                    <p class="font-semibold text-gray-800">${secIndex + 1}.${qIndex + 1}. ${questionText}</p>
+                                    <p class="text-xs text-indigo-500 mt-1 italic">Type: ${typeLabels[questionType] || questionType}</p>
+                                    ${optionsHTML}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+            reviewSections.insertAdjacentHTML('beforeend', sectionHTML);
+        });
+    } catch (error) {
+        console.error('Error in updateReview:', error, error.stack);
+        alert('Error updating review: ' + error.message);
+    }
+}
+
+function previewSurvey() {
+    // Collect survey data (safe access to inputs)
+    const surveyTitle = (document.getElementById('survey-title') && document.getElementById('survey-title').value) || 'Untitled Survey';
+    const surveyDescription = (document.getElementById('survey-description') && document.getElementById('survey-description').value) || 'No description provided.';
+    const emailValidationEl = document.getElementById('survey-email-validation');
+    const emailValidation = emailValidationEl ? emailValidationEl.value : 'any';
+    const requirePropertyInfo = (document.getElementById('survey-require-property') && document.getElementById('survey-require-property').checked) || false;
+    const categoryEl = document.getElementById('survey-category');
+    const category = categoryEl ? categoryEl.value : 'uncategorized';
+    
+    // Update preview modal
+    const previewTitleEl = document.getElementById('preview-title');
+    const previewDescEl = document.getElementById('preview-description');
+    if (previewTitleEl) {
+        previewTitleEl.textContent = surveyTitle;
+        previewTitleEl.style.wordBreak = 'break-word';
+        previewTitleEl.style.overflowWrap = 'break-word';
+        previewTitleEl.style.maxWidth = '100%';
+    }
+    // Update preview category badge
+    const previewCategoryEl = document.getElementById('preview-category');
+    if (previewCategoryEl) {
+        if (category && category !== 'uncategorized') {
+            previewCategoryEl.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+            previewCategoryEl.style.display = 'inline-block';
+        } else {
+            previewCategoryEl.style.display = 'none';
+        }
+    }
+    if (previewDescEl) {
+        previewDescEl.textContent = surveyDescription;
+        previewDescEl.style.wordBreak = 'break-word';
+        previewDescEl.style.overflowWrap = 'break-word';
+        previewDescEl.style.maxWidth = '100%';
+        previewDescEl.style.whiteSpace = 'normal';
+        previewDescEl.style.lineHeight = '1.6';
+    }
+    
+    const previewBody = document.getElementById('preview-body');
+    previewBody.innerHTML = '';
+    previewBody.style.overflowX = 'hidden';
+    previewBody.style.maxWidth = '100%';
+    previewBody.style.boxSizing = 'border-box';
+    
+    // Add student information section
+    const studentInfoHTML = `
+        <div class="bg-indigo-50 p-6 rounded-xl border-2 border-indigo-200 mx-auto" style="max-width: 100%;">
+            <h2 class="text-2xl font-bold text-indigo-900 mb-4 text-center">Your Information</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+                    <input type="text" class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email Address <span class="text-red-500">*</span></label>
+                    <input type="email" class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-indigo-500 focus:border-indigo-500" 
+                           placeholder="${emailValidation === 'gmail' ? 'yourname@gmail.com' : emailValidation === 'university' ? 'yourname@university.edu' : 'yourname@gmail.com or yourname@university.edu'}">
+                    <p class="text-xs text-gray-500 mt-1">
+                        ${emailValidation === 'gmail' ? 'Please use a Gmail address.' : 
+                          emailValidation === 'university' ? 'Please use your university email address.' : 
+                          emailValidation === 'both' ? 'Please use a Gmail address or your university email address.' : 
+                          'Any valid email address.'}
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input type="tel" class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-indigo-500 focus:border-indigo-500" placeholder="+1234567890">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Student ID (if available)</label>
+                    <input type="text" class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-indigo-500 focus:border-indigo-500" placeholder="S-12345">
+                </div>
+            </div>
+        </div>
+    `;
+    previewBody.insertAdjacentHTML('beforeend', studentInfoHTML);
+    
+    // Add property information if required
+    if (requirePropertyInfo) {
+        const propertyInfoHTML = `
+            <div class="bg-yellow-50 p-6 rounded-xl border-2 border-yellow-200 mx-auto" style="max-width: 100%;">
+                <h2 class="text-2xl font-bold text-yellow-900 mb-4 text-center">Property Information</h2>
+                <p class="text-sm text-gray-600 mb-4">Please provide information about the property you are renting.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Property ID <span class="text-red-500">*</span> (if known)</label>
+                        <input type="text" class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-indigo-500 focus:border-indigo-500" placeholder="P-101">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Property Owner Email <span class="text-red-500">*</span></label>
+                        <input type="email" class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-indigo-500 focus:border-indigo-500" placeholder="landlord@email.com">
+                    </div>
+                </div>
+            </div>
+        `;
+        previewBody.insertAdjacentHTML('beforeend', propertyInfoHTML);
+    }
+    
+    // Add survey sections and questions
+    document.querySelectorAll('.section-card').forEach((section, secIndex) => {
+        const sectionTitle = section.querySelector('input[name^="section_title"]').value || `Section ${secIndex + 1}`;
+        const questions = section.querySelectorAll('.question-item');
+        const sectionColor = section.getAttribute('data-section-color') || '#818cf8';
+        
+        if (questions.length === 0) return;
+        
+        const sectionHTML = `
+            <div class="bg-white p-6 rounded-xl border-2 mx-auto" style="border-color: ${sectionColor}; max-width: 100%;">
+                <h2 class="text-2xl font-bold mb-6 text-center" style="color: ${sectionColor};">${sectionTitle}</h2>
+                <div class="space-y-6">
+                    ${Array.from(questions).map((q, qIndex) => {
+                        const questionText = q.querySelector('textarea').value || 'Untitled question';
+                        const questionType = q.querySelector('select').value;
+                        const isRequired = q.querySelector('input[type="checkbox"]').checked;
+                        
+                        let questionHTML = `
+                            <div class="question-item">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    ${questionText}
+                                    ${isRequired ? '<span class="text-red-500">*</span>' : ''}
+                                </label>
+                        `;
+                        
+                        if (questionType === 'text_short') {
+                            questionHTML += `
+                                <input type="text" class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-indigo-500 focus:border-indigo-500" placeholder="Type your answer here">
+                            `;
+                        } else if (questionType === 'text_long') {
+                            questionHTML += `
+                                <textarea rows="4" class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-indigo-500 focus:border-indigo-500" placeholder="Type your answer here"></textarea>
+                            `;
+                        } else if (questionType === 'multiple_choice') {
+                            const options = q.querySelectorAll('.options-container input[type="text"]');
+                            const questionId = `preview-mc-${secIndex}-${qIndex}`;
+                            questionHTML += `
+                                <div class="space-y-2">
+                                    ${Array.from(options).filter(opt => opt.value.trim()).map((opt, optIndex) => `
+                                        <label class="flex items-center p-3 border border-gray-300 rounded-lg bg-white hover:bg-indigo-50 cursor-pointer transition">
+                                            <input type="radio" name="${questionId}" value="${opt.value}" class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                            <span class="ml-3 text-gray-700">${opt.value}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            `;
+                        } else if (questionType === 'checkbox') {
+                            const options = q.querySelectorAll('.options-container input[type="text"]');
+                            const questionId = `preview-cb-${secIndex}-${qIndex}`;
+                            questionHTML += `
+                                <div class="space-y-2">
+                                    ${Array.from(options).filter(opt => opt.value.trim()).map((opt, optIndex) => `
+                                        <label class="flex items-center p-3 border border-gray-300 rounded-lg bg-white hover:bg-indigo-50 cursor-pointer transition">
+                                            <input type="checkbox" name="${questionId}[]" value="${opt.value}" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                            <span class="ml-3 text-gray-700">${opt.value}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            `;
+                        } else if (questionType === 'rating') {
+                            const questionId = `preview-rating-${secIndex}-${qIndex}`;
+                            questionHTML += `
+                                <div class="flex space-x-2">
+                                    ${Array.from([1,2,3,4,5]).map(i => `
+                                        <label class="flex items-center justify-center w-12 h-12 border-2 border-gray-300 rounded-lg bg-white hover:bg-yellow-50 cursor-pointer transition hover:border-yellow-400">
+                                            <input type="radio" name="${questionId}" value="${i}" class="sr-only">
+                                            <span class="text-2xl">⭐</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+                        
+                        questionHTML += `</div>`;
+                        return questionHTML;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+        previewBody.insertAdjacentHTML('beforeend', sectionHTML);
+    });
+    
+    // Show modal
+    document.getElementById('preview-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Add interactivity to rating stars
+    setTimeout(() => {
+        document.querySelectorAll('input[type="radio"][name^="preview-rating"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Update visual state of all stars in this group
+                const groupName = this.name;
+                const allStars = document.querySelectorAll(`input[type="radio"][name="${groupName}"]`);
+                allStars.forEach((star, index) => {
+                    const label = star.closest('label');
+                    if (star.checked) {
+                        // Highlight selected star and all previous stars
+                        for (let i = 0; i <= index; i++) {
+                            const prevLabel = allStars[i].closest('label');
+                            if (prevLabel) {
+                                prevLabel.classList.add('bg-yellow-100', 'border-yellow-400');
+                                prevLabel.classList.remove('bg-white', 'border-gray-300');
+                            }
+                        }
+                        // Unhighlight stars after selected one
+                        for (let i = index + 1; i < allStars.length; i++) {
+                            const nextLabel = allStars[i].closest('label');
+                            if (nextLabel) {
+                                nextLabel.classList.remove('bg-yellow-100', 'border-yellow-400');
+                                nextLabel.classList.add('bg-white', 'border-gray-300');
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Add hover effect
+            const label = radio.closest('label');
+            if (label) {
+                label.addEventListener('mouseenter', function() {
+                    if (!radio.checked) {
+                        const groupName = radio.name;
+                        const allStars = document.querySelectorAll(`input[type="radio"][name="${groupName}"]`);
+                        const currentIndex = Array.from(allStars).indexOf(radio);
+                        for (let i = 0; i <= currentIndex; i++) {
+                            const prevLabel = allStars[i].closest('label');
+                            if (prevLabel && !allStars[i].checked) {
+                                prevLabel.classList.add('bg-yellow-50');
+                            }
+                        }
+                    }
+                });
+                label.addEventListener('mouseleave', function() {
+                    if (!radio.checked) {
+                        const groupName = radio.name;
+                        const allStars = document.querySelectorAll(`input[type="radio"][name="${groupName}"]`);
+                        const currentIndex = Array.from(allStars).indexOf(radio);
+                        for (let i = 0; i <= currentIndex; i++) {
+                            const prevLabel = allStars[i].closest('label');
+                            if (prevLabel && !allStars[i].checked) {
+                                prevLabel.classList.remove('bg-yellow-50');
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }, 100);
+}
+
+function closePreview() {
+    document.getElementById('preview-modal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Close preview on outside click
+document.getElementById('preview-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePreview();
+    }
+});
+
+// Close preview on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('preview-modal').classList.contains('active')) {
+        closePreview();
+    }
+});
+
+// Handle form submission
+document.getElementById('survey-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validate before submission
+    const title = document.getElementById('survey-title').value.trim();
+    if (!title) {
+        alert('Survey Title is required.');
+        showStep(1);
+        return;
+    }
+    
+    // Collect all sections and questions
+    const sections = [];
+    document.querySelectorAll('.section-card').forEach((section, sIdx) => {
+        const sectionId = section.dataset.sectionId;
+        const sectionTitle = section.querySelector('input[name^="section_title"]').value.trim();
+        
+        if (!sectionTitle) {
+            alert(`Section ${sIdx + 1} must have a title.`);
+            return;
+        }
+        
+        const questions = [];
+        
+        section.querySelectorAll('.question-item').forEach((question, qIdx) => {
+            const questionText = question.querySelector('textarea').value.trim();
+            if (!questionText) {
+                alert(`Question ${qIdx + 1} in Section "${sectionTitle}" must have text.`);
+                return;
+            }
+            
+            const questionType = question.querySelector('select').value;
+            const isRequired = question.querySelector('input[type="checkbox"]').checked;
+            const options = [];
+            
+            if (questionType === 'multiple_choice' || questionType === 'checkbox') {
+                const allOptionInputs = question.querySelectorAll('.options-container input[type="text"]');
+                let emptyOptions = [];
+                
+                allOptionInputs.forEach((opt, optIdx) => {
+                    if (opt.value.trim()) {
+                        options.push(opt.value.trim());
+                    } else {
+                        emptyOptions.push(optIdx + 1);
+                    }
+                });
+                
+                if (options.length < 2) {
+                    alert(`Question "${questionText}" needs at least 2 filled options.`);
+                    return;
+                }
+                
+                // Validate ALL options are filled before publishing
+                if (emptyOptions.length > 0) {
+                    alert(`Question "${questionText}" has empty options (Option ${emptyOptions.join(', ')}). Please fill all options before publishing.`);
+                    return;
+                }
+            }
+            
+            questions.push({
+                text: questionText,
+                type: questionType,
+                options: options,
+                is_required: isRequired,
+            });
+        });
+        
+        if (questions.length === 0) {
+            alert(`Section "${sectionTitle}" must have at least one question.`);
+            return;
+        }
+        
+        // Get section color from data attribute or color input
+        const sectionColor = section.getAttribute('data-section-color') || 
+                            (section.querySelector('input[type="color"]')?.value || '#818cf8');
+        
+        sections.push({
+            title: sectionTitle,
+            color: sectionColor,
+            questions: questions,
+        });
+    });
+    
+    if (sections.length === 0) {
+        alert('Survey must have at least one section with questions.');
+        return;
+    }
+    
+    // Add hidden input with JSON data
+    const existingInput = this.querySelector('input[name="sections"]');
+    if (existingInput) {
+        existingInput.remove();
+    }
+    
+    const sectionsInput = document.createElement('input');
+    sectionsInput.type = 'hidden';
+    sectionsInput.name = 'sections';
+    sectionsInput.value = JSON.stringify(sections);
+    this.appendChild(sectionsInput);
+    
+    // Submit form
+    this.submit();
+});
+
+// Initialize
+showStep(1);
+
+// Check if preview parameter is in URL and auto-open preview
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('preview') === '1') {
+    // Hide the edit form and all editing UI elements, show only preview
+    const editForm = document.getElementById('survey-form');
+    const stepIndicators = document.querySelector('nav[aria-label="Progress"]');
+    const header = document.querySelector('header.mb-4');
+    
+    if (editForm) {
+        editForm.style.display = 'none';
+    }
+    if (stepIndicators) {
+        stepIndicators.style.display = 'none';
+    }
+    if (header) {
+        header.style.display = 'none';
+    }
+    
+    // Wait for page to fully load, then open preview
+    setTimeout(function() {
+        if (typeof previewSurvey === 'function') {
+            previewSurvey();
+            // Make preview modal full screen and remove close button behavior
+            const previewModal = document.getElementById('preview-modal');
+            if (previewModal) {
+                previewModal.style.position = 'relative';
+                previewModal.style.background = 'transparent';
+                previewModal.style.padding = '0';
+                const closeBtn = previewModal.querySelector('.preview-close');
+                if (closeBtn) {
+                    closeBtn.style.display = 'none';
+                }
+                // Show back button when previewing from survey list
+                const backButtonContainer = document.getElementById('preview-back-button-container');
+                if (backButtonContainer) {
+                    backButtonContainer.style.display = 'block';
+                }
+                // Adjust preview content margin to fit below top bar
+                const previewContent = previewModal.querySelector('.preview-content');
+                if (previewContent) {
+                    previewContent.style.marginTop = '1rem';
+                }
+            }
+        }
+    }, 500);
+}
+
+// Make sure functions are globally accessible
+window.addOption = addOption;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+
+// Use event delegation to handle Add Option button clicks - this will work even if onclick fails
+document.addEventListener('click', function(e) {
+    const target = e.target;
+    let button = null;
+    
+    // Method 1: Check if clicked element has the class
+    if (target.classList && target.classList.contains('add-option-btn')) {
+        button = target;
+    } else if (target.closest && target.closest('.add-option-btn')) {
+        button = target.closest('.add-option-btn');
+    }
+    
+    // Method 2: Check by text content (fallback)
+    if (!button) {
+        if (target.tagName === 'BUTTON') {
+            if (target.textContent.includes('Add Option') || target.innerHTML.includes('Add Option')) {
+                button = target;
+            }
+        } else if (target.closest) {
+            const btn = target.closest('button');
+            if (btn && (btn.textContent.includes('Add Option') || btn.innerHTML.includes('Add Option'))) {
+                button = btn;
+            }
+        }
+    }
+    
+    // If we found an Add Option button, call the function
+    if (button) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        // Call addOption directly
+        try {
+            const result = addOption(button);
+            if (!result) {
+                console.warn('addOption returned false');
+            }
+        } catch (error) {
+            console.error('Error adding option:', error);
+            alert('Error adding option: ' + error.message);
+        }
+    }
+    
+    // Also handle Review & Publish button
+    if (target.id === 'btn-next-2' || (target.closest && target.closest('#btn-next-2'))) {
+        const reviewBtn = target.id === 'btn-next-2' ? target : target.closest('#btn-next-2');
+        if (reviewBtn && (reviewBtn.textContent.includes('Review & Publish') || reviewBtn.innerHTML.includes('Review & Publish'))) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            try {
+                console.log('Review & Publish button clicked via event delegation');
+                nextStep();
+            } catch (error) {
+                console.error('Error in nextStep:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+    }
+}, true);
+</script>
+{% endblock %}

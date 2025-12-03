@@ -1,0 +1,72 @@
+<!-- templates folder
+templates/properties/partials/my_home_payments.html
+-->
+
+
+{% if user.is_authenticated and user.profile.role == 'property_owner' %}
+<div class="myhome-panel hidden" data-panel="payments">
+    <div class="grid lg:grid-cols-[0.75fr,1.25fr] gap-6">
+        <div class="glass-card rounded-2xl p-5 border border-white/10 space-y-4">
+            <p class="text-xs text-text-muted uppercase tracking-[0.4em] mb-2">Financial Pulse</p>
+            <div class="space-y-3">
+                <div>
+                    <p class="text-3xl font-bold text-white">₱{{ payment_stats.collected }}</p>
+                    <p class="text-xs text-text-muted uppercase">Collected</p>
+                </div>
+                <div>
+                    <p class="text-3xl font-bold text-white">₱{{ payment_stats.pending }}</p>
+                    <p class="text-xs text-text-muted uppercase">Pending</p>
+                </div>
+                <div>
+                    <p class="text-3xl font-bold text-white">₱{{ payment_stats.overdue }}</p>
+                    <p class="text-xs text-text-muted uppercase text-red-300">Overdue</p>
+                </div>
+            </div>
+            <p class="text-xs text-text-muted">Next cycle due: <span class="text-white font-semibold">{{ payment_stats.upcoming_due }}</span></p>
+            <div class="space-y-2">
+                {% for slot in payment_calendar %}
+                <div class="flex items-center justify-between text-sm">
+                    <span>{{ slot.date }} · {{ slot.label }}</span>
+                    <span class="badge bg-white/10 text-text-muted">{{ slot.status|title }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="glass-card rounded-2xl p-5 border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-white">Payment History</h3>
+                <button class="text-xs text-neon-cyan font-semibold">Export</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                    <thead class="text-text-muted uppercase text-xs border-b border-white/10">
+                        <tr>
+                            <th class="py-2">Reference</th>
+                            <th class="py-2">Boarder</th>
+                            <th class="py-2">Amount</th>
+                            <th class="py-2">Status</th>
+                            <th class="py-2">Due</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for payment in payments %}
+                        <tr>
+                            <td class="py-3 text-white">{{ payment.reference }}</td>
+                            <td class="py-3 text-text-muted">{{ payment.boarder }}</td>
+                            <td class="py-3 text-white">₱{{ payment.amount }}</td>
+                            <td class="py-3">
+                                <span class="badge {% if payment.status == 'Paid' %}status-paid{% elif payment.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">{{ payment.status }}</span>
+                            </td>
+                            <td class="py-3 text-text-muted">{{ payment.due_date }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-text-muted py-4">No payments recorded.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+

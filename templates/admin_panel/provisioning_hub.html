@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+
+{% block title %}Provisioning & Compliance Hub - Boarding Hub{% endblock %}
+
+{% block header_title %}Provisioning Hub{% endblock %}
+{% block current_view_title %}User Management{% endblock %}
+
+{% block sidebar %}
+{% include 'admin_panel/_sidebar.html' %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+    
+    /* Custom scrollbar for aesthetic feel */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background-color: #9ca3af; border-radius: 4px; }
+    ::-webkit-scrollbar-track { background-color: #f3f4f6; }
+    
+    /* Input styling unification */
+    .hub-input {
+        width: 100%;
+        padding: 0.625rem 0.875rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.75rem;
+        transition: all 0.15s ease-in-out;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        font-size: 0.9rem;
+    }
+    .hub-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5);
+    }
+    
+    /* Tab button styling */
+    .tab-button {
+        padding: 0.5rem 1rem;
+        border-radius: 0.75rem 0.75rem 0 0;
+        font-weight: 600;
+        transition: all 0.2s ease-in-out;
+        font-size: 0.75rem;
+    }
+    .tab-active {
+        color: white;
+        background-color: #4f46e5;
+        box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .tab-inactive {
+        color: #4f46e5;
+        background-color: #eef2ff;
+        border: 1px solid #c7d2fe;
+        border-bottom: 1px solid transparent;
+    }
+    .tab-inactive:hover {
+        background-color: #e0e7ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-7xl mx-auto">
+    <!-- Header Section -->
+    <header class="mb-4 text-center">
+        <h1 class="text-xl font-extrabold text-gray-900 tracking-tight">
+            Central Provisioning Hub
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+            Manage property owner registration and student enrollment.
+        </p>
+    </header>
+    
+    <!-- Tab Navigation -->
+    <div class="flex justify-center space-x-2 mb-0">
+        <button id="btn-property" class="tab-button tab-active" onclick="switchTab('property')">
+            <span class="flex items-center space-x-2">
+                <i class="fas fa-building h-6 w-6"></i>
+                <span>Property Registration</span>
+            </span>
+        </button>
+        <button id="btn-student" class="tab-button tab-inactive" onclick="switchTab('student')">
+            <span class="flex items-center space-x-2">
+                <i class="fas fa-user-graduate h-6 w-6"></i>
+                <span>Student Enrollment</span>
+            </span>
+        </button>
+    </div>
+    
+    <!-- Content View -->
+    <div id="content-view" class="bg-white p-4 lg:p-6 rounded-2xl rounded-tl-none shadow-2xl" style="border-top: 1px solid #e5e7eb; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; border-bottom: none;">
+        
+        <!-- Property Registration View -->
+        <div id="property-view" class="grid lg:grid-cols-2 gap-4 transition-opacity duration-300">
+            
+            <!-- Property Form (Left Column) -->
+            <div id="property-form-container">
+                <h2 class="text-base font-bold text-gray-800 mb-3 border-b pb-1.5">Register New Property & Owner</h2>
+                
+                <form method="post" action="{% url 'admin_panel:add_property_owner' %}" class="space-y-3">
+                    {% csrf_token %}
+                    
+                    <!-- Property ID -->
+                    <div>
+                        <label for="prop-id" class="block text-sm font-medium text-gray-700 mb-1">
+                            Property ID (e.g., P-101)
+                        </label>
+                        <input type="text" id="prop-id" name="prop-id" placeholder="Enter unique property ID" required class="hub-input">
+                    </div>
+                    
+                    <!-- Owner Full Name -->
+                    <div>
+                        <label for="owner-name" class="block text-sm font-medium text-gray-700 mb-1">
+                            Owner Full Name
+                        </label>
+                        <input type="text" id="owner-name" name="owner-name" placeholder="John Smith" required class="hub-input">
+                    </div>
+                    
+                    <!-- Owner Email (Login ID) -->
+                    <div>
+                        <label for="owner-email" class="block text-sm font-medium text-gray-700 mb-1">
+                            Owner Email (Login ID)
+                        </label>
+                        <input type="email" id="owner-email" name="owner-email" placeholder="owner@email.com" required class="hub-input">
+                    </div>
+                    
+                    <!-- Address -->
+                    <div>
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-1">
+                            Address
+                        </label>
+                        <textarea id="address" name="address" rows="2" placeholder="Full physical address of the property" required class="hub-input resize-none"></textarea>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full py-2 px-3 bg-indigo-600 text-white text-sm font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition mt-3">
+                        Register Property & Send Invitation
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Property Status Card (Right Column) -->
+                    <div id="property-status-card" class="p-4 bg-indigo-50 rounded-xl border border-indigo-200 flex items-center justify-center min-h-[250px]">
+                        <div class="text-center text-indigo-400">
+                            <i class="fas fa-building mx-auto mb-2" style="font-size: 3rem;"></i>
+                            <p class="text-lg font-semibold text-indigo-700">Property Registration Flow</p>
+                            <p class="text-xs mt-1">Submit the property and owner details. An automated invitation link will be sent to the owner's email.</p>
+                        </div>
+                    </div>
+        </div>
+        
+        <!-- Student Enrollment View (Initially hidden) -->
+        <div id="student-view" class="grid lg:grid-cols-2 gap-4 transition-opacity duration-300 hidden">
+            
+            <!-- Student Form (Left Column) -->
+            <div id="student-form-container">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Enroll New Student</h2>
+                
+                <form method="post" action="{% url 'admin_panel:add_student' %}" class="space-y-3">
+                    {% csrf_token %}
+                    
+                    <!-- Student ID -->
+                    <div>
+                        <label for="student-id" class="block text-sm font-medium text-gray-700 mb-1">
+                            Student ID (e.g., S-456)
+                        </label>
+                        <input type="text" id="student-id" name="student-id" placeholder="Enter unique student identifier" required class="hub-input">
+                    </div>
+                    
+                    <!-- Student Full Name -->
+                    <div>
+                        <label for="student-name" class="block text-sm font-medium text-gray-700 mb-1">
+                            Student Full Name
+                        </label>
+                        <input type="text" id="student-name" name="student-name" placeholder="Jane Doe" required class="hub-input">
+                    </div>
+                    
+                    <!-- Student Email -->
+                    <div>
+                        <label for="student-email" class="block text-sm font-medium text-gray-700 mb-1">
+                            Student Email (Login ID)
+                        </label>
+                        <input type="email" id="student-email" name="student-email" placeholder="student@email.com" required class="hub-input">
+                    </div>
+                    
+                    <!-- Department -->
+                    <div>
+                        <label for="department" class="block text-sm font-medium text-gray-700 mb-1">
+                            Department (Optional)
+                        </label>
+                        <select id="department" name="department" class="hub-input">
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Program -->
+                    <div>
+                        <label for="program" class="block text-sm font-medium text-gray-700 mb-1">
+                            Program (Optional)
+                        </label>
+                        <select id="program" name="program" class="hub-input">
+                            <option value="">Select Program</option>
+                            {% for prog in programs %}
+                            <option value="{{ prog.id }}" data-department="{{ prog.department.id }}">{{ prog.name }} ({{ prog.department.name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Associated Property ID -->
+                    <div>
+                        <label for="assigned-prop-id" class="block text-sm font-medium text-gray-700 mb-1">
+                            Associated Property ID (Optional)
+                        </label>
+                        <select id="assigned-prop-id" name="assigned-prop-id" class="hub-input">
+                            <option value="" disabled selected>Select Registered Property</option>
+                            {% for property in properties %}
+                                {% if property.status == 'verified' %}
+                                <option value="{{ property.property_id }}">{{ property.property_id }} - {{ property.address }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 transition duration-300 mt-4">
+                        Enroll Student & Send Welcome
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Student Status Card (Right Column) -->
+                    <div id="student-status-card" class="p-4 bg-indigo-50 rounded-xl border border-indigo-200 flex items-center justify-center min-h-[250px]">
+                        <div class="text-center text-indigo-400">
+                            <i class="fas fa-user-graduate mx-auto mb-2" style="font-size: 3rem;"></i>
+                            <p class="text-lg font-semibold text-indigo-700">Student Enrollment Flow</p>
+                            <p class="text-xs mt-1">Input the student details and the associated property. Enrollment confirmation will be sent to the student email.</p>
+                        </div>
+                    </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const btnProperty = document.getElementById('btn-property');
+    const btnStudent = document.getElementById('btn-student');
+    const viewProperty = document.getElementById('property-view');
+    const viewStudent = document.getElementById('student-view');
+    
+    function switchTab(role) {
+        if (role === 'property') {
+            // Activate Property Tab
+            btnProperty.classList.add('tab-active');
+            btnProperty.classList.remove('tab-inactive');
+            btnStudent.classList.remove('tab-active');
+            btnStudent.classList.add('tab-inactive');
+            
+            // Show Property View, Hide Student View
+            viewProperty.classList.remove('hidden');
+            viewStudent.classList.add('hidden');
+        } else if (role === 'student') {
+            // Activate Student Tab
+            btnStudent.classList.add('tab-active');
+            btnStudent.classList.remove('tab-inactive');
+            btnProperty.classList.remove('tab-active');
+            btnProperty.classList.add('tab-inactive');
+            
+            // Show Student View, Hide Property View
+            viewStudent.classList.remove('hidden');
+            viewProperty.classList.add('hidden');
+        }
+    }
+    
+    // Initialize the first tab (Property) on window load
+    window.addEventListener('DOMContentLoaded', () => {
+        switchTab('property');
+        
+        // Filter programs based on selected department
+        const departmentSelect = document.getElementById('department');
+        const programSelect = document.getElementById('program');
+        
+        if (departmentSelect && programSelect) {
+            departmentSelect.addEventListener('change', function() {
+                const selectedDept = this.value;
+                const options = programSelect.querySelectorAll('option');
+                
+                options.forEach(option => {
+                    if (option.value === '') {
+                        option.style.display = 'block';
+                    } else {
+                        const deptId = option.getAttribute('data-department');
+                        if (deptId === selectedDept || !selectedDept) {
+                            option.style.display = 'block';
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    }
+                });
+                
+                // Reset program selection if it doesn't match the department
+                if (selectedDept && programSelect.value) {
+                    const selectedOption = programSelect.options[programSelect.selectedIndex];
+                    if (selectedOption.getAttribute('data-department') !== selectedDept) {
+                        programSelect.value = '';
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

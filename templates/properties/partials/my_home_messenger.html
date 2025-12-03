@@ -1,0 +1,576 @@
+<!-- templates folder
+templates/properties/partials/my_home_messenger.html
+-->
+
+
+<div class="myhome-panel hidden" data-panel="messenger">
+    <!-- Messenger App Container -->
+    <div id="messengerApp" class="flex flex-1 overflow-hidden h-[calc(100vh-240px)] bg-gradient-to-br from-gray-900 via-gray-950 to-black">
+
+        <!-- 1. Left Panel: Chat List / Contacts -->
+        <div id="contactList" class="flex-col w-full lg:w-80 bg-gray-800/50 border-r border-gray-700 lg:flex overflow-hidden">
+            
+            <!-- Header/Search -->
+            <div class="p-4 border-b border-gray-700 flex flex-col flex-shrink-0">
+                <h1 class="text-2xl font-bold text-neon-cyan mb-3">Messages</h1>
+            </div>
+
+            <!-- Chat List -->
+            <div id="conversations-list" class="flex-1 overflow-y-auto custom-scroll">
+                <!-- Conversations will be rendered here -->
+                <div class="text-center p-8 text-gray-500 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-600/30 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    No conversations yet
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Right Panel: Conversation View -->
+        <div id="conversationView" class="flex flex-col flex-1 bg-gray-900/50 shadow-inner lg:flex hidden lg:flex">
+            
+            <!-- Conversation Header -->
+            <div class="flex items-center justify-between p-4 bg-gray-800/50 border-b border-gray-700 shadow-md z-10 flex-shrink-0">
+                <div class="flex items-center">
+                    <!-- Back button visible only on mobile (lg:hidden) -->
+                    <button class="lg:hidden text-gray-400 hover:text-white mr-3" onclick="showContactList()">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-neon-cyan/30 to-neon-purple/30 border border-neon-cyan/50 flex items-center justify-center flex-shrink-0">
+                        <span id="chat-avatar-initial" class="text-sm font-semibold text-neon-cyan">?</span>
+                    </div>
+                    <div class="ml-3">
+                        <p id="chat-recipient-name" class="font-semibold text-lg text-white">Select a chat</p>
+                        <p id="chat-recipient-status" class="text-sm text-green-500">Online</p>
+                    </div>
+                </div>
+                <button class="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-700 transition duration-150">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M18 12a6 6 0 11-12 0 6 6 0 0112 0z" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-center px-6 py-12">
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 border border-neon-cyan/30 flex items-center justify-center mb-4 animate-pulse">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-neon-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2">Select a conversation</h3>
+                <p class="text-sm text-gray-400 max-w-xs">Choose from your existing conversations or start a new one by clicking on a contact.</p>
+            </div>
+
+            <!-- Chat Area (Hidden until selected) -->
+            <div id="chat-area" class="hidden flex flex-col h-full">
+                
+                <!-- Messages Container -->
+                <div id="messages-container" class="flex-1 p-6 space-y-4 overflow-y-auto custom-scroll">
+                    <!-- Messages will be populated here -->
+                </div>
+                
+                <!-- Message Input Footer -->
+                <div class="p-4 bg-gray-800/50 border-t border-gray-700 flex items-center gap-3 flex-shrink-0">
+                    
+                    <!-- Attachment Button -->
+                    <button class="p-2 text-gray-400 hover:text-neon-cyan transition duration-150 rounded-full hover:bg-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a1.5 1.5 0 00-2.121-2.121l-9.9 9.9A4 4 0 003 20h18" />
+                        </svg>
+                    </button>
+
+                    <!-- Text Input -->
+                    <textarea 
+                        id="message-input" 
+                        placeholder="Type a message..." 
+                        class="flex-1 p-3 rounded-xl bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-neon-cyan transition duration-150 resize-none max-h-24" 
+                        rows="1"
+                        disabled
+                    ></textarea>
+
+                    <!-- Send Button -->
+                    <button 
+                        id="send-message-btn" 
+                        class="p-3 bg-neon-cyan text-gray-900 rounded-xl hover:bg-neon-cyan/90 transition duration-150 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+                        disabled
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <style>
+        /* Custom scrollbar styling for dark mode */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        /* Mobile View State Control */
+        @media (max-width: 1023px) {
+            #contactList {
+                display: flex;
+                flex-basis: 100%;
+                max-width: 100%;
+            }
+            #conversationView {
+                display: none;
+            }
+            .show-chat #contactList {
+                display: none;
+            }
+            .show-chat #conversationView {
+                display: flex !important;
+                flex-basis: 100%;
+                max-width: 100%;
+            }
+        }
+        /* Desktop: when a conversation is opened we can hide the contact list and expand conversation */
+        @media (min-width: 1024px) {
+            /* Use a specific selector so adding the class to #messengerApp reliably hides the contact list */
+            #messengerApp.chat-open #contactList { display: none !important; }
+            #messengerApp.chat-open #conversationView { display: flex !important; flex-basis: 100% !important; max-width: 100% !important; }
+        }
+    </style>
+
+    <style>
+        /* Desktop ordering: put conversation/messages panel first visually */
+        @media (min-width:1024px) {
+            #conversationView { order: -1; }
+            #contactList { order: 0; }
+            /* Make messages area the visual priority */
+            #conversationView { flex: 1 1 0%; }
+            #contactList { flex: 0 0 20rem; }
+        }
+    </style>
+
+    <script>
+    // Helper: try common profile-setup URLs and redirect to the first that exists
+    window.findAndRedirectToProfileSetup = async function() {
+        const candidates = [
+            '/properties/dashboard/profile/',
+            '/students/complete-profile/',
+            '/accounts/profile-setup/',
+            '/admin-panel/profile/'
+        ];
+        for (const url of candidates) {
+            try {
+                const res = await fetch(url, { method: 'HEAD', credentials: 'same-origin' });
+                if (res && res.ok) {
+                    console.log('Redirecting to:', url);
+                    window.location.href = url;
+                    return true;
+                }
+            } catch (err) {
+                console.warn('Failed to probe ' + url, err);
+            }
+        }
+        console.warn('No profile-setup URL found; opening modal instead');
+        // Fallback: try opening profile modal
+        if (typeof window.loadUserProfile === 'function') {
+            try {
+                const currentUserId = {{ request.user.id }};
+                window.loadUserProfile(currentUserId);
+                document.getElementById('user-profile-modal')?.classList.remove('hidden');
+                return false;
+            } catch (err) {
+                console.error('Error loading profile modal', err);
+            }
+        }
+        return false;
+    };
+
+    // Mobile helpers: show/hide chat on small screens
+    window.showConversation = function(name) {
+        if (window.innerWidth < 1024) {
+            const app = document.getElementById('messengerApp');
+            if (app) app.classList.add('show-chat');
+        }
+    };
+
+    window.showContactList = function() {
+        if (window.innerWidth < 1024) {
+            const app = document.getElementById('messengerApp');
+            if (app) app.classList.remove('show-chat');
+            // also remove desktop 'chat-open' state when user navigates back
+            if (app) app.classList.remove('chat-open');
+        } else {
+            // On desktop, ensure chat-open is removed to show contact list
+            const app = document.getElementById('messengerApp');
+            if (app) app.classList.remove('chat-open');
+        }
+    };
+
+    // Store messenger state globally
+    window.messengerState = {
+        conversations: [],
+        currentConversationId: null
+    };
+
+    (function() {
+        const currentUserId = {{ request.user.id }};
+
+        let currentConversationId = null;
+        let conversations = [];
+        let pollInterval = null;
+        
+        // DOM Elements
+        const conversationsList = document.getElementById('conversations-list');
+        const messagesContainer = document.getElementById('messages-container');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-message-btn');
+        const chatRecipientName = document.getElementById('chat-recipient-name');
+        const chatRecipientStatus = document.getElementById('chat-recipient-status');
+        const chatAvatarInitial = document.getElementById('chat-avatar-initial');
+        const emptyState = document.getElementById('empty-state');
+        const chatArea = document.getElementById('chat-area');
+        const conversationView = document.getElementById('conversationView');
+        
+        // Fetch conversations
+        async function loadConversations() {
+            try {
+                const response = await fetch('/properties/api/conversations/');
+                const data = await response.json();
+                conversations = data.conversations || [];
+                renderConversations(conversations);
+            } catch (err) {
+                console.error('Error loading conversations:', err);
+            }
+        }
+        
+        // Render conversations list
+        function renderConversations(convs) {
+            const meEntry = `
+                <a href="/properties/messenger/?user_id=${encodeURIComponent(String(currentUserId))}" class="conversation-me flex items-center p-4 hover:bg-gray-700/50 transition duration-150 border-b border-gray-700">
+                    <div class="w-12 h-12 rounded-full bg-neon-cyan/10 text-neon-cyan flex items-center justify-center mr-4 font-semibold">Me</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-center">
+                            <p class="font-semibold text-white truncate">You (Me)</p>
+                            <p class="text-xs font-medium text-gray-400">Profile</p>
+                        </div>
+                        <p class="text-sm text-gray-400 truncate mt-1">Open your chat page</p>
+                    </div>
+                </a>
+            `;
+
+            if (convs.length === 0) {
+                conversationsList.innerHTML = `
+                    <div class="text-center py-12">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-text-muted/20 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <p class="text-xs text-text-muted">No conversations yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const convsHtml = convs.map(conv => `
+                <a href="/properties/messenger/?user_id=${encodeURIComponent(String(conv.participant.id))}" class="conversation-item flex items-center p-4 hover:bg-gray-700/50 transition duration-150 ${currentConversationId === conv.id ? 'bg-neon-cyan/20 border-l-4 border-neon-cyan' : 'border-b border-gray-700'}" data-conv-id="${conv.id}">
+                    <img src="https://placehold.co/40x40/06b6d4/1f2937?text=${escapeHtml(conv.participant.name.charAt(0).toUpperCase())}" alt="Avatar" class="w-12 h-12 rounded-full object-cover mr-4 ring-2 ring-neon-cyan/30">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-center">
+                            <p class="font-semibold text-white truncate">${escapeHtml(conv.participant.name)}</p>
+                            <p class="text-xs font-medium text-gray-400">Now</p>
+                        </div>
+                        <p class="text-sm text-gray-400 truncate mt-1">${conv.last_message ? escapeHtml(conv.last_message.content.substring(0, 50)) : 'No messages yet'}</p>
+                    </div>
+                    ${conv.unread_count > 0 ? `<span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full ml-2">${conv.unread_count}</span>` : ''}
+                </a>
+            `).join('');
+
+            // Prepend the 'Me' entry then the conversations
+            conversationsList.innerHTML = meEntry + convsHtml;
+
+            // Add click handlers for conversation items (open inline)
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    selectConversation(parseInt(item.dataset.convId));
+                });
+            });
+
+            // Add click handler for 'Me' entry to redirect to full chat page
+            document.querySelectorAll('.conversation-me').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const href = item.getAttribute('href');
+                    if (href) window.location.href = href;
+                });
+            });
+        }
+        
+        // Select conversation
+        async function selectConversation(convId) {
+            console.log('selectConversation called with convId=', convId);
+            currentConversationId = convId;
+            const conv = conversations.find(c => c.id === convId || String(c.id) === String(convId));
+            console.log('resolved conv:', conv);
+            
+            if (!conv) {
+                console.warn('selectConversation: conversation not found for id', convId);
+                return;
+            }
+            
+            // Show chat area, hide empty state
+            emptyState.classList.add('hidden');
+            chatArea.classList.remove('hidden');
+            if (typeof conversationView !== 'undefined' && conversationView) conversationView.classList.remove('hidden');
+            // On desktop, collapse the contact list and expand conversation
+            try {
+                const appEl = document.getElementById('messengerApp');
+                if (appEl) appEl.classList.add('chat-open');
+            } catch (err) {
+                console.warn('Could not set chat-open state', err);
+            }
+            
+            // Update header
+            chatRecipientName.textContent = escapeHtml(conv.participant.name);
+            chatRecipientName.dataset.userId = conv.participant.id;
+            chatAvatarInitial.textContent = escapeHtml(conv.participant.name.charAt(0).toUpperCase());
+            chatRecipientStatus.textContent = 'Online';
+            
+            // Enable input
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            messageInput.focus();
+            
+            // Load messages
+            await loadMessages(convId);
+            
+            // Re-render conversations to update selection
+            renderConversations(conversations);
+            
+            // Show on mobile
+            window.showConversation(conv.participant.name);
+        }
+        
+        // Load messages for conversation
+        async function loadMessages(convId) {
+            try {
+                const response = await fetch(`/properties/api/conversations/${convId}/messages/`);
+                const data = await response.json();
+                renderMessages(data.messages || []);
+            } catch (err) {
+                console.error('Error loading messages:', err);
+            }
+        }
+        
+        // Render messages
+        function renderMessages(messages) {
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center py-12">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-text-muted/20 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <p class="text-xs text-text-muted">No messages yet. Start the conversation!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            messagesContainer.innerHTML = messages.map(msg => {
+                const isOwn = msg.sender_id === currentUserId;
+                const msgDate = new Date(msg.created_at);
+                const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                return `
+                    <div class="flex ${isOwn ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-xs lg:max-w-md ${isOwn ? 'bg-neon-cyan text-gray-900 rounded-3xl rounded-tr-sm shadow-lg shadow-neon-cyan/20' : 'bg-gray-700 text-white rounded-3xl rounded-tl-sm shadow-md'} px-4 py-3">
+                            <p class="text-sm break-words">${escapeHtml(msg.content)}</p>
+                            <span class="block text-xs ${isOwn ? 'text-neon-cyan/80' : 'text-gray-300'} mt-1 text-right">${timeStr}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Scroll to bottom
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 50);
+        }
+        
+        // Send message
+        async function sendMessage() {
+            if (!currentConversationId || !messageInput.value.trim()) return;
+            
+            const conv = conversations.find(c => c.id === currentConversationId);
+            if (!conv) return;
+            
+            const content = messageInput.value.trim();
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            try {
+                const formData = new FormData();
+                formData.append('data', JSON.stringify({ content }));
+                
+                const response = await fetch(`/properties/api/send-message/${conv.participant.id}/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    // Reload conversations and messages
+                    await loadConversations();
+                    if (currentConversationId) {
+                        await loadMessages(currentConversationId);
+                    }
+                }
+            } catch (err) {
+                console.error('Error sending message:', err);
+                messageInput.value = content;
+            }
+        }
+        
+        // Auto-expand textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 96) + 'px';
+        });
+        
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Search removed — conversations render unfiltered
+        
+        // Helper function
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+        
+        // Expose key functions globally for cross-script communication
+        window.messengerState.selectConversation = selectConversation;
+        window.messengerState.loadConversations = loadConversations;
+        window.messengerState.conversations = conversations;
+        
+        // Load conversations on init
+        loadConversations();
+
+        // Listen for requests to open a conversation by user id
+        async function handleOpenConversation(e) {
+            console.log('=== openConversationByUser event handler called ===');
+            console.log('Event:', e);
+            let userId = e?.detail?.userId || window.pendingChatUserId;
+            console.log('userId extracted:', userId);
+            if (!userId) {
+                console.warn('No userId in event detail or pending');
+                return;
+            }
+
+            // Clear pending
+            window.pendingChatUserId = null;
+
+            // Update global state with latest conversations
+            window.messengerState.conversations = conversations;
+            console.log('Current conversations:', conversations);
+
+            // Try to find an existing conversation with this participant
+            console.log('Looking for existing conversation with user:', userId);
+            const conv = conversations.find(c => String(c.participant.id) === String(userId));
+            if (conv) {
+                console.log('Found existing conversation:', conv.id);
+                await selectConversation(conv.id);
+                return;
+            }
+
+            console.log('No existing conversation, showing chat area for new user');
+            // No existing conversation: show chat area and set header for this user
+            emptyState.classList.add('hidden');
+            chatArea.classList.remove('hidden');
+            conversationView.classList.remove('hidden');
+             chatRecipientName.textContent = 'User #' + userId;
+            chatAvatarInitial.textContent = (userId && String(userId).charAt(0)) || '?';
+            chatRecipientName.dataset.userId = userId;
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+
+             // Show on mobile
+             window.showConversation('User #' + userId);
+
+            // Ensure messenger panel visible and posts hidden
+            const messengerPanel = document.querySelector('[data-panel="messenger"]');
+            const postsPanel = document.querySelector('[data-panel="posts"]');
+            if (messengerPanel && postsPanel) {
+                postsPanel.classList.add('hidden');
+                messengerPanel.classList.remove('hidden');
+            }
+        }
+        
+        document.addEventListener('openConversationByUser', handleOpenConversation);
+
+        // Allow clicking the chat recipient name to view profile or redirect
+        try {
+            chatRecipientName.style.cursor = 'pointer';
+            chatRecipientName.addEventListener('click', function() {
+                const uid = this.dataset.userId;
+                if (!uid) return;
+                    // If it's the current user, go to profile setup
+                    if (String(uid) === String(currentUserId)) {
+                        window.findAndRedirectToProfileSetup();
+                        return;
+                    }
+                // Otherwise show profile modal via global function if available
+                if (typeof window.loadUserProfile === 'function') {
+                    window.loadUserProfile(uid);
+                    document.getElementById('user-profile-modal')?.classList.remove('hidden');
+                }
+            });
+        } catch (err) {
+            // ignore
+        }
+        
+        // Refresh conversations every 3 seconds
+        pollInterval = setInterval(loadConversations, 3000);
+        
+        // Cleanup on panel change
+        const panel = document.querySelector('[data-panel="messenger"]');
+        if (panel) {
+            const observer = new MutationObserver(() => {
+                if (panel.classList.contains('hidden')) {
+                    clearInterval(pollInterval);
+                } else {
+                    if (!pollInterval) {
+                        pollInterval = setInterval(loadConversations, 3000);
+                    }
+                }
+            });
+            observer.observe(panel, { attributes: true });
+        }
+    })();
+    </script>
+</div>

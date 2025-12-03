@@ -1,0 +1,1560 @@
+<!-- templates folder
+templates/properties/partials/my_home_boarders.html
+-->
+
+
+{% if user.is_authenticated and user.profile.role == 'property_owner' %}
+<div class="myhome-panel hidden" data-panel="boarders">
+    <!-- Property Selector removed per user request -->
+
+    <!-- Create Room Section -->
+        <div class="glass-card rounded-2xl p-6 border border-white/10 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.5em] text-neon-cyan font-semibold">Room Setup</p>
+                    <h3 class="text-2xl font-bold text-white mt-1">Create New Room</h3>
+                </div>
+                <button id="toggle-room-form" class="px-4 py-2 rounded-xl bg-neon-cyan/10 border border-neon-cyan text-neon-cyan text-sm font-semibold hover:bg-neon-cyan/20 transition">
+                    <span class="show-text">+ Add Room</span>
+                    <span class="hide-text hidden">- Close Form</span>
+                </button>
+            </div>
+        
+            <!-- Room Creation Modal (Hidden by default) -->
+            <div id="add-room-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur flex items-center justify-center px-4">
+                <form id="room-creation-form" class="glass-card rounded-2xl p-6 w-full max-w-2xl space-y-4" autocomplete="off">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Room Number/Name</label>
+                        <input type="text" id="room-name" placeholder="e.g., Room 101, Corner Suite A" class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan placeholder-text-muted">
+                    </div>
+                    <!-- Property selection removed per user request -->
+                </div>
+            
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Capacity</label>
+                        <input type="number" id="room-capacity" placeholder="1" min="1" class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Monthly Rate</label>
+                        <input type="number" id="room-rate" placeholder="5000" min="0" class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Room Type</label>
+                        <select id="room-type" class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan">
+                            <option value="single">Single Bed</option>
+                            <option value="double">Double Bed</option>
+                            <option value="twin">Twin Bed</option>
+                            <option value="deluxe">Deluxe Suite</option>
+                            <option value="family">Family Room</option>
+                            <option value="apartment">Apartment</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <input type="text" id="room-type-custom" placeholder="Specify custom room type" class="mt-2 w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan hidden" />
+                    </div>
+                    </div>
+                
+                    <!-- Description removed per user request -->
+
+                    <div>
+                        <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Room Picture</label>
+                        <input type="file" id="room-picture" accept="image/*" multiple class="hidden" />
+                        <button type="button" id="room-picture-btn" class="w-full px-4 py-2 rounded-xl bg-white/5 border-2 border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 transition text-sm flex items-center justify-center gap-2" aria-label="Choose pictures">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7M16 3l-4 4-4-4"/></svg>
+                            <span>Choose pictures</span>
+                        </button>
+                        <div id="room-picture-preview-grid" class="mt-3 hidden grid grid-cols-4 gap-2 max-h-40 overflow-y-auto"></div>
+                        <p class="text-xs text-text-muted mt-2" id="picture-count"></p>
+                    </div>
+                
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" id="create-room-btn" class="flex-1 px-4 py-2 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold hover:bg-neon-cyan/30 transition">Create Room</button>
+                        <button type="button" id="cancel-room-form" class="flex-1 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-text-muted font-semibold hover:bg-white/10 transition">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <!-- Duplicate room setup removed (keeps single room creation block above) -->
+
+    <!-- Borders Directory Section -->
+            <div class="space-y-6">
+        <div class="grid lg:grid-cols-[0.65fr,1.35fr] gap-6">
+            <!-- Stats Card -->
+            <div class="glass-card rounded-2xl p-5 border border-white/10 space-y-4">
+                <p class="text-xs text-text-muted uppercase tracking-[0.4em] mb-2">Roster Overview</p>
+                <div class="space-y-3">
+                    <div>
+                        <p id="total-boarders-stat" class="text-3xl font-bold text-white">{{ boarders_list|length }}</p>
+                        <p class="text-xs text-text-muted uppercase">Current Boarders</p>
+                    </div>
+                    <div>
+                        <p id="total-rooms-stat" class="text-3xl font-bold text-neon-cyan">0</p>
+                        <p class="text-xs text-text-muted uppercase">Total Rooms</p>
+                    </div>
+                    <div>
+                        <p id="occupied-rooms-stat" class="text-3xl font-bold text-neon-green">0</p>
+                        <p class="text-xs text-text-muted uppercase">Occupied Rooms</p>
+                    </div>
+                    <div>
+                        <p id="available-rooms-stat" class="text-3xl font-bold text-neon-yellow">0</p>
+                        <p class="text-xs text-text-muted uppercase">Available Slots</p>
+                    </div>
+                </div>
+                <p class="text-xs text-text-muted">Click on rooms below to view assigned students.</p>
+            </div>
+            
+            <!-- Boarder Directory Header & Search -->
+            <div class="glass-card rounded-2xl p-5 border border-white/10">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                    <h3 class="text-xl font-semibold text-white">Boarder Directory</h3>
+                    <input id="boarder-search" type="text" placeholder="Search boarder..." class="rounded-2xl bg-white/5 border border-white/10 px-4 py-2 text-sm focus:outline-none focus:border-neon-cyan">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left">
+                        <thead class="text-text-muted uppercase text-xs border-b border-white/10">
+                            <tr>
+                                <th class="py-2 pl-2">Profile</th>
+                                <th class="py-2">Property</th>
+                                <th class="py-2">Room</th>
+                                <th class="py-2">Contact</th>
+                                <th class="py-2">Status</th>
+                                <th class="py-2 text-right pr-2">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="boarder-table" class="divide-y divide-white/5">
+                            {% for boarder in boarders_list %}
+                            <tr class="boarder-row hover:bg-white/5 transition">
+                                <td class="py-3 pl-2">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-neon-cyan to-neon-green flex items-center justify-center text-white text-xs font-bold">
+                                            {{ boarder.name|first|upper }}
+                                        </div>
+                                        <div>
+                                            <p class="text-white font-medium">{{ boarder.name }}</p>
+                                            <p class="text-xs text-text-muted">{{ boarder.contact|default:"No contact" }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 text-text-muted text-sm">{{ boarder.property }}</td>
+                                <td class="py-3 text-text-muted text-sm">{{ boarder.room }}</td>
+                                <td class="py-3 text-text-muted text-sm">
+                                    {% if boarder.contact %}
+                                        {{ boarder.contact }}
+                                    {% else %}
+                                        <span class="text-xs text-white/30">–</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge text-xs px-2 py-1 rounded-full {% if boarder.status == 'Active' %}bg-neon-green/20 text-neon-green{% else %}bg-white/10 text-text-muted{% endif %}">{{ boarder.status }}</span>
+                                </td>
+                                <td class="py-3 text-right pr-2">
+                                    <button class="message-boarder px-3 py-1 rounded-full border border-neon-cyan text-neon-cyan text-xs hover:bg-neon-cyan/10 transition" data-name="{{ boarder.name }}">Message</button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center text-text-muted py-4">No boarders yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+            </div>
+
+            <!-- Room setup container: created rooms will appear here -->
+            <div class="mt-8 w-full">
+                <p class="text-xs uppercase tracking-[0.5em] text-neon-cyan font-semibold mb-4">Rooms</p>
+                <div id="room-setup-list" class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- room cards injected here -->
+                </div>
+            </div>
+            
+            <!-- Edit Room Modal -->
+            <div id="edit-room-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur flex items-center justify-center px-4">
+                <form id="edit-room-form" class="glass-card rounded-2xl p-6 w-full max-w-2xl space-y-4" autocomplete="off">
+                    <h3 class="text-xl font-semibold text-white mb-4">Edit Room</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Room Number/Name</label>
+                            <input type="text" id="edit-room-name" placeholder="e.g., Room 101" class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan placeholder-text-muted">
+                        </div>
+                    </div>
+                    <!-- Edit pictures: show existing + allow adding new -->
+                    <div>
+                        <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Room Pictures</label>
+                        <div class="flex gap-2 items-center">
+                            <label for="edit-room-picture" class="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-neon-cyan cursor-pointer">Add Pictures</label>
+                            <input type="file" id="edit-room-picture" accept="image/*" multiple class="hidden">
+                            <p class="text-xs text-text-muted" id="edit-picture-count"></p>
+                        </div>
+                        <div id="edit-room-picture-preview-grid" class="mt-3 grid grid-cols-4 gap-2 max-h-40 overflow-y-auto"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Capacity</label>
+                            <input type="number" id="edit-room-capacity" placeholder="1" min="1" class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Monthly Rate</label>
+                            <input type="number" id="edit-room-rate" placeholder="5000" min="0" class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Room Type</label>
+                            <select id="edit-room-type" class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan">
+                                <option value="single">Single Bed</option>
+                                <option value="double">Double Bed</option>
+                                <option value="twin">Twin Bed</option>
+                                <option value="deluxe">Deluxe Suite</option>
+                                <option value="family">Family Room</option>
+                                <option value="apartment">Apartment</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <input type="text" id="edit-room-type-custom" placeholder="Specify custom room type" class="mt-2 w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-neon-cyan hidden" />
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-2">
+                        <button type="submit" id="save-edit-room-btn" class="flex-1 px-4 py-2 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold hover:bg-neon-cyan/30 transition">Save Changes</button>
+                        <button type="button" id="cancel-edit-room-form" class="flex-1 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-text-muted font-semibold hover:bg-white/10 transition">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Edit Room Confirmation Modal -->
+            <div id="edit-room-confirm-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4">
+                <div class="glass-card rounded-2xl p-6 w-full max-w-md space-y-4">
+                    <h3 class="text-lg font-semibold text-white">Confirm Changes</h3>
+                    <p class="text-sm text-text-muted">Review the changes you're about to save to this room:</p>
+                    
+                    <div id="confirm-changes-summary" class="space-y-2 bg-white/5 rounded-xl p-4 border border-white/10 max-h-64 overflow-y-auto">
+                        <!-- Summary will be populated here -->
+                    </div>
+                    
+                    <div class="flex gap-3 pt-2">
+                        <button id="confirm-save-btn" class="flex-1 px-4 py-2 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold hover:bg-neon-cyan/30 transition">Confirm & Save</button>
+                        <button id="cancel-confirm-btn" class="flex-1 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-text-muted font-semibold hover:bg-white/10 transition">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Room Detail Modal -->
+                <div id="room-detail-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4">
+                    <div class="glass-card rounded-2xl p-6 w-full max-w-4xl space-y-4 max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-start">
+                            <h3 id="detail-room-name" class="text-xl font-semibold text-white"></h3>
+                            <button id="detail-close-btn" class="text-white text-2xl">×</button>
+                        </div>
+                        <div class="relative">
+                                <img id="detail-main-img" src="" alt="Room image" class="w-full max-h-96 object-contain rounded-xl">
+                            <button id="detail-prev" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 text-white px-3 py-2 rounded">‹</button>
+                            <button id="detail-next" class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 text-white px-3 py-2 rounded">›</button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="space-y-1">
+                                <div id="detail-type" class="text-sm text-text-muted"></div>
+                                <div id="detail-capacity" class="text-sm text-text-muted"></div>
+                                <div id="detail-occupancy" class="text-sm text-text-muted"></div>
+                            </div>
+                            <div class="text-right">
+                                <div id="detail-rate" class="text-lg font-bold text-neon-cyan"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Students in Room Table -->
+                        <div class="mt-6">
+                            <h4 class="text-lg font-semibold text-white mb-3">Students Assigned to this Room</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b border-white/10">
+                                            <th class="text-left py-2 text-text-muted">Student ID</th>
+                                            <th class="text-left py-2 text-text-muted">Name</th>
+                                            <th class="text-left py-2 text-text-muted">Email</th>
+                                            <th class="text-left py-2 text-text-muted">Department</th>
+                                            <th class="text-left py-2 text-text-muted">Year Level</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detail-students-tbody">
+                                        <tr><td colspan="5" class="text-center text-text-muted py-4">No students assigned to this room</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2 pt-2">
+                            <button id="detail-edit-btn" class="px-4 py-2 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan">Edit</button>
+                            <button id="detail-close-bottom" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-text-muted">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- Room Image Modal - removed, using shared image-viewer-modal from layout -->
+        </div>
+    </div>
+</div>
+{% endif %}
+ 
+<script>
+(function(){
+    function escapeHtml(text) {
+        if (!text && text !== 0) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function loadRooms() {
+        // Now handled by API - fetch from server instead of localStorage
+        return [];
+    }
+    
+    // Provide a template-side default property id (if available) so JS can fall back
+    // to a server-provided value when the selector was removed from the UI.
+    (function(){
+        // Set a global fallback property id if the template provides one.
+        try {
+            window.DEFAULT_PROPERTY_ID = {% if properties %}{{ properties.0.id }}{% else %}null{% endif %};
+        } catch (e) {
+            window.DEFAULT_PROPERTY_ID = null;
+        }
+    })();
+
+    // Fetch properties from server API if not available in template context
+    async function fetchOwnerPropertiesFromAPI() {
+        if (window.DEFAULT_PROPERTY_ID) {
+            // Already have a property id, no need to fetch
+            return;
+        }
+        try {
+            const response = await fetch('/properties/api/properties/');
+            const data = await response.json();
+            if (data.success && data.properties && data.properties.length > 0) {
+                // Set the first property as the default
+                window.DEFAULT_PROPERTY_ID = data.properties[0].id;
+                console.log('Fetched property ID from API:', window.DEFAULT_PROPERTY_ID);
+                // Re-enable the create room button if it was disabled
+                const createRoomBtn = document.getElementById('create-room-btn');
+                if (createRoomBtn) {
+                    createRoomBtn.disabled = false;
+                    createRoomBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to fetch owner properties from API:', err);
+        }
+    }
+
+    // Call API on page load if needed
+    window.addEventListener('DOMContentLoaded', fetchOwnerPropertiesFromAPI);
+    // Also call immediately in case DOMContentLoaded already fired
+    fetchOwnerPropertiesFromAPI();
+
+    // Consolidated getPropertyId: try selector -> fallback to DEFAULT_PROPERTY_ID -> null
+    function getPropertyId() {
+        const selector = document.getElementById('property-selector');
+        if (selector && selector.value) {
+            const val = parseInt(selector.value);
+            if (!Number.isNaN(val)) return val;
+        }
+
+        if (typeof window.DEFAULT_PROPERTY_ID === 'number' && window.DEFAULT_PROPERTY_ID) {
+            return window.DEFAULT_PROPERTY_ID;
+        }
+
+        console.warn('No property id available for API calls (selector missing and no default provided)');
+        return null;
+    }
+    
+    // Fetch rooms from API
+    async function fetchRoomsFromAPI() {
+        const prop_id = getPropertyId();
+        if (!prop_id) return [];
+        
+        try {
+            const response = await fetch(`/properties/api/rooms/${prop_id}/`);
+            if (!response.ok) throw new Error('Failed to fetch rooms');
+            const data = await response.json();
+            return data.rooms || [];
+        } catch (err) {
+            console.error('Error fetching rooms:', err);
+            return [];
+        }
+    }
+    
+    // Save rooms to API (create new room)
+    async function createRoomViaAPI(roomData, imageFiles) {
+        const prop_id = getPropertyId();
+        if (!prop_id) {
+            alert('Property ID not found');
+            return null;
+        }
+        
+        const formData = new FormData();
+        formData.append('data', JSON.stringify(roomData));
+        
+        // Add image files
+        let imageIndex = 0;
+        for (const file of imageFiles) {
+            formData.append(`image_${imageIndex}`, file);
+            imageIndex++;
+        }
+        
+        try {
+            const response = await fetch(`/properties/api/rooms/${prop_id}/create/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                }
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to create room');
+            }
+            
+            const result = await response.json();
+            return result.room;
+        } catch (err) {
+            console.error('Error creating room:', err);
+            alert(`Failed to create room: ${err.message}`);
+            return null;
+        }
+    }
+    
+    // Update room via API
+    async function updateRoomViaAPI(roomId, roomData, newImageFiles, deletedImageIds) {
+        const formData = new FormData();
+        formData.append('data', JSON.stringify({
+            ...roomData,
+            deleted_images: deletedImageIds || []
+        }));
+        
+        // Add new image files
+        let imageIndex = 0;
+        for (const file of newImageFiles) {
+            formData.append(`image_${imageIndex}`, file);
+            imageIndex++;
+        }
+        
+        try {
+            const response = await fetch(`/properties/api/rooms/${roomId}/update/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                }
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to update room');
+            }
+            
+            const result = await response.json();
+            return result.room;
+        } catch (err) {
+            console.error('Error updating room:', err);
+            alert(`Failed to update room: ${err.message}`);
+            return null;
+        }
+    }
+    
+    // Delete room (move to trash)
+    async function deleteRoomViaAPI(roomId) {
+        try {
+            const response = await fetch(`/properties/api/rooms/${roomId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to delete room');
+            return await response.json();
+        } catch (err) {
+            console.error('Error deleting room:', err);
+            alert(`Failed to delete room: ${err.message}`);
+            return null;
+        }
+    }
+    
+    // Restore room from trash
+    async function restoreRoomViaAPI(roomId) {
+        try {
+            const response = await fetch(`/properties/api/rooms/${roomId}/restore/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to restore room');
+            return await response.json();
+        } catch (err) {
+            console.error('Error restoring room:', err);
+            alert(`Failed to restore room: ${err.message}`);
+            return null;
+        }
+    }
+    
+    // Fetch trashed rooms
+    async function fetchTrashedRoomsFromAPI() {
+        const prop_id = getPropertyId();
+        if (!prop_id) return [];
+        
+        try {
+            const response = await fetch(`/properties/api/rooms/${prop_id}/trashed/`);
+            if (!response.ok) throw new Error('Failed to fetch trashed rooms');
+            const data = await response.json();
+            return data.rooms || [];
+        } catch (err) {
+            console.error('Error fetching trashed rooms:', err);
+            return [];
+        }
+    }
+
+    // Fallback image viewer opener used by previews (keeps behavior local to this partial)
+    function _openInlineViewer(images, index) {
+        try {
+            if (!images || !images.length) return;
+            window._roomViewerImages = images;
+            window._roomViewerIndex = Math.max(0, Math.min(index || 0, images.length - 1));
+            const modal = document.getElementById('image-viewer-modal');
+            const imgEl = document.getElementById('image-viewer-img');
+            const counter = document.getElementById('image-viewer-counter');
+            const nextBtn = document.getElementById('image-viewer-next');
+            const prevBtn = document.getElementById('image-viewer-prev');
+            if (!modal || !imgEl) return;
+            imgEl.src = window._roomViewerImages[window._roomViewerIndex];
+            if (counter) counter.textContent = (window._roomViewerIndex + 1) + ' / ' + window._roomViewerImages.length;
+            // attach simple click handlers (replace previous)
+            if (nextBtn) {
+                nextBtn.onclick = function(e){ e && e.preventDefault(); e && e.stopPropagation(); window._roomViewerIndex = (window._roomViewerIndex + 1) % window._roomViewerImages.length; imgEl.src = window._roomViewerImages[window._roomViewerIndex]; if(counter) counter.textContent = (window._roomViewerIndex + 1) + ' / ' + window._roomViewerImages.length; };
+            }
+            if (prevBtn) {
+                prevBtn.onclick = function(e){ e && e.preventDefault(); e && e.stopPropagation(); window._roomViewerIndex = (window._roomViewerIndex - 1 + window._roomViewerImages.length) % window._roomViewerImages.length; imgEl.src = window._roomViewerImages[window._roomViewerIndex]; if(counter) counter.textContent = (window._roomViewerIndex + 1) + ' / ' + window._roomViewerImages.length; };
+            }
+            modal.classList.remove('hidden');
+        } catch (err) { console.warn('Inline viewer error', err); }
+    }
+
+    // Old saveRooms kept for backward compatibility (now no-op, images saved via API)
+    function saveRooms(rooms) {
+        // Images are now saved directly via API, so this is no longer needed
+        return true;
+    }
+
+    // Compress image file to a data URL (resizes to maxWidth preserving aspect ratio)
+    function compressImageFile(file, maxWidth = 1024, quality = 0.75) {
+        return new Promise((resolve, reject) => {
+            try {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const ratio = Math.min(1, maxWidth / img.width);
+                            const w = Math.max(1, Math.round(img.width * ratio));
+                            const h = Math.max(1, Math.round(img.height * ratio));
+                            canvas.width = w;
+                            canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, w, h);
+                            // Use JPEG to get better compression for photos; fallback to PNG if needed
+                            let dataUrl;
+                            try {
+                                dataUrl = canvas.toDataURL('image/jpeg', quality);
+                            } catch (err) {
+                                dataUrl = canvas.toDataURL();
+                            }
+                            resolve(dataUrl);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    };
+                    img.onerror = function() { reject(new Error('Image load failed')); };
+                    img.src = e.target.result;
+                };
+                reader.onerror = function() { reject(new Error('File read failed')); };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = (e) => resolve(e.target.result);
+            r.onerror = () => reject(new Error('File read error'));
+            r.readAsDataURL(file);
+        });
+    }
+
+    function openRoomImageViewer(roomId, index) {
+        // Reuse the shared image-viewer-modal from layout.html
+        // Try to get from API data first, then fallback to localStorage
+        let images = [];
+        
+        // Check if we have API data in window
+        if (window._roomAutoSwipers && window._roomAutoSwipers[roomId] && window._roomAutoSwipers[roomId].images) {
+            images = window._roomAutoSwipers[roomId].images;
+        } else {
+            // Fallback to localStorage
+            const rooms = loadRooms();
+            const room = rooms.find(r => r.id === roomId);
+            if (!room) return;
+            images = room.images || room.picture || [];
+        }
+        
+        if (!images || images.length === 0) return;
+
+        // Store room images globally for the image viewer to use
+        window._roomViewerImages = images;
+        window._roomViewerIndex = index || 0;
+
+        // Use the shared image viewer modal
+        const modal = document.getElementById('image-viewer-modal');
+        const img = document.getElementById('image-viewer-img');
+        const video = document.getElementById('image-viewer-video');
+        const counter = document.getElementById('image-viewer-counter');
+
+        if (!modal || !img) return;
+
+        // Hide video, show image
+        if (video) video.classList.add('hidden');
+        img.classList.remove('hidden');
+        img.src = window._roomViewerImages[window._roomViewerIndex];
+        if (counter) counter.textContent = `${window._roomViewerIndex + 1} / ${window._roomViewerImages.length}`;
+
+        // Bind prev/next buttons
+        const nextBtn = document.getElementById('image-viewer-next');
+        const prevBtn = document.getElementById('image-viewer-prev');
+
+        if (nextBtn) {
+            nextBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window._roomViewerIndex = (window._roomViewerIndex + 1) % window._roomViewerImages.length;
+                img.src = window._roomViewerImages[window._roomViewerIndex];
+                if (counter) counter.textContent = `${window._roomViewerIndex + 1} / ${window._roomViewerImages.length}`;
+            };
+        }
+
+        if (prevBtn) {
+            prevBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window._roomViewerIndex = (window._roomViewerIndex - 1 + window._roomViewerImages.length) % window._roomViewerImages.length;
+                img.src = window._roomViewerImages[window._roomViewerIndex];
+                if (counter) counter.textContent = `${window._roomViewerIndex + 1} / ${window._roomViewerImages.length}`;
+            };
+        }
+
+        // Touch swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        img.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        img.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchEndX < touchStartX - 50) {
+                // Swiped left: next image
+                window._roomViewerIndex = (window._roomViewerIndex + 1) % window._roomViewerImages.length;
+                img.src = window._roomViewerImages[window._roomViewerIndex];
+                if (counter) counter.textContent = `${window._roomViewerIndex + 1} / ${window._roomViewerImages.length}`;
+            }
+            if (touchEndX > touchStartX + 50) {
+                // Swiped right: previous image
+                window._roomViewerIndex = (window._roomViewerIndex - 1 + window._roomViewerImages.length) % window._roomViewerImages.length;
+                img.src = window._roomViewerImages[window._roomViewerIndex];
+                if (counter) counter.textContent = `${window._roomViewerIndex + 1} / ${window._roomViewerImages.length}`;
+            }
+        });
+
+        modal.classList.remove('hidden');
+    }
+
+    async function renderRooms() {
+        // Fetch rooms from API instead of localStorage
+        console.log('renderRooms() called...');
+        const rooms = await fetchRoomsFromAPI();
+        console.log('Fetched rooms from API:', rooms);
+        const container = document.getElementById('room-setup-list');
+        if (!container) {
+            console.warn('Room container not found!');
+            return;
+        }
+
+        console.log('Rendering rooms with images:', rooms.map(r => ({ id: r.id, name: r.name, imageCount: r.images?.length || 0, images: r.images })));
+
+        // Clear any existing auto-swipers to avoid duplicated intervals
+        if (window._roomAutoSwipers) {
+            Object.keys(window._roomAutoSwipers).forEach(k => {
+                try { clearInterval(window._roomAutoSwipers[k].interval); } catch(_){}
+            });
+        }
+        window._roomAutoSwipers = {};
+
+        // Clear container
+        container.innerHTML = '';
+        console.log('Container cleared, rendering', rooms.length, 'rooms');
+
+        rooms.forEach((r, idx) => {
+            const pics = r.images || [];
+            console.log(`Room ${r.id} (${r.name}): ${pics.length} images`);
+            const card = document.createElement('div');
+            card.className = 'w-full bg-gradient-to-br from-white/10 to-white/5 rounded-xl overflow-hidden hover:shadow-lg hover:shadow-neon-cyan/20 border border-white/10 hover:border-neon-cyan/30 cursor-pointer';
+            card.dataset.roomId = r.id;
+
+            // Image section
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'h-48 flex items-center justify-center overflow-hidden relative bg-white/5';
+
+            if (pics.length) {
+                if (pics.length === 1) {
+                    const mainImg = document.createElement('img');
+                    mainImg.className = 'room-main-image max-w-full max-h-full object-contain rounded-xl';
+                    mainImg.src = pics[0];
+                    mainImg.alt = r.name || 'Room image';
+                    mainImg.onerror = () => {
+                        console.warn('Failed to load image for room', r.id, 'src:', pics[0]);
+                        mainImg.style.display = 'none';
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'w-full h-full flex items-center justify-center text-xs text-text-muted';
+                        placeholder.textContent = 'Image failed to load';
+                        imgContainer.appendChild(placeholder);
+                    };
+                    imgContainer.appendChild(mainImg);
+                    mainImg.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        try { if (typeof openRoomImageViewer === 'function') { openRoomImageViewer(r.id, 0); return; } } catch(e){}
+                        try { _openInlineViewer(pics, 0); } catch(err) { console.warn('viewer open failed', err); }
+                    });
+                } else {
+                    // Multi-image carousel
+                    const slider = document.createElement('div');
+                    slider.className = 'room-slider relative w-full h-full overflow-hidden';
+                    const slides = document.createElement('div');
+                    slides.className = 'room-slides flex h-full w-full';
+                    slides.style.transform = 'translateX(0)';
+                    slides.style.transition = 'transform 600ms cubic-bezier(0.4,0,0.2,1)';
+
+                    pics.forEach((src) => {
+                        const s = document.createElement('div');
+                        s.className = 'room-slide flex-shrink-0 w-full h-full flex items-center justify-center';
+                        s.style.flex = '0 0 100%';
+                        s.style.width = '100%';
+                        const img = document.createElement('img');
+                        img.src = src;
+                        img.alt = r.name || 'Room image';
+                        img.className = 'w-full h-full object-cover rounded-xl';
+                        img.onerror = () => {
+                            console.warn('Failed to load carousel image:', src);
+                        };
+                        s.appendChild(img);
+                        slides.appendChild(s);
+                    });
+
+                    slider.appendChild(slides);
+                    imgContainer.appendChild(slider);
+
+                    // Counter badge
+                    const badge = document.createElement('div');
+                    badge.className = 'absolute top-3 right-3 bg-black/50 backdrop-blur text-white text-xs font-bold px-2.5 py-1 rounded-lg';
+                    badge.textContent = `1 / ${pics.length}`;
+                    imgContainer.appendChild(badge);
+
+                    // Click to open viewer
+                    slider.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        const state = window._roomAutoSwipers && window._roomAutoSwipers[r.id];
+                        const idx = state ? (state.index || 0) : 0;
+                        try { if (typeof openRoomImageViewer === 'function') { openRoomImageViewer(r.id, idx); return; } } catch(e){}
+                        try { _openInlineViewer(pics, idx); } catch(err) { console.warn('viewer open failed', err); }
+                    });
+
+                    // Auto-swiper
+                    (function startSwiper(roomId, slidesEl, count, counterBadge) {
+                        let index = 0;
+                        let interval = null;
+
+                        function go(n, forceRightward=false) {
+                            let prevIndex = index;
+                            let nextIndex = ((n % count) + count) % count;
+                            if (forceRightward && prevIndex === count - 1 && nextIndex === 0) {
+                                slidesEl.style.transition = 'transform 600ms cubic-bezier(0.4,0,0.2,1)';
+                                slidesEl.style.transform = `translateX(-${count * 100}%)`;
+                                setTimeout(() => {
+                                    slidesEl.style.transition = 'none';
+                                    slidesEl.style.transform = 'translateX(0)';
+                                }, 600);
+                                nextIndex = 0;
+                            } else {
+                                const translatePct = nextIndex * 100;
+                                slidesEl.style.transition = 'transform 600ms cubic-bezier(0.4,0,0.2,1)';
+                                slidesEl.style.transform = `translateX(-${translatePct}%)`;
+                            }
+                            index = nextIndex;
+                            if (counterBadge) counterBadge.textContent = `${index + 1} / ${count}`;
+                            if (window._roomAutoSwipers && window._roomAutoSwipers[roomId]) window._roomAutoSwipers[roomId].index = index;
+                        }
+
+                        function start() {
+                            if (interval) return;
+                            interval = setInterval(() => {
+                                go(index + 1, true);
+                                window._roomAutoSwipers[roomId].index = index;
+                            }, 7000);
+                            window._roomAutoSwipers[roomId].interval = interval;
+                        }
+
+                        function stop() {
+                            if (interval) { clearInterval(interval); interval = null; window._roomAutoSwipers[roomId].interval = null; }
+                        }
+
+                        slidesEl.parentNode.addEventListener('mouseenter', () => { stop(); });
+                        slidesEl.parentNode.addEventListener('mouseleave', () => { start(); });
+
+                        window._roomAutoSwipers = window._roomAutoSwipers || {};
+                        window._roomAutoSwipers[roomId] = { interval: null, index: 0, slidesEl: slidesEl, badge: counterBadge, images: pics };
+                        if (counterBadge) counterBadge.textContent = `1 / ${count}`;
+                        start();
+                    })(r.id, slides, pics.length, badge);
+                }
+            } else {
+                const noImg = document.createElement('div');
+                noImg.className = 'w-full h-full flex items-center justify-center text-xs text-text-muted';
+                noImg.textContent = 'No Image';
+                imgContainer.appendChild(noImg);
+            }
+
+            // Details section
+            const detailsContainer = document.createElement('div');
+            detailsContainer.className = 'p-5 space-y-3';
+
+            const roomName = document.createElement('h3');
+            roomName.className = 'text-lg font-bold text-white truncate';
+            roomName.textContent = r.name || 'Untitled Room';
+
+            const tagsContainer = document.createElement('div');
+            tagsContainer.className = 'flex flex-wrap gap-2';
+
+            const typeTag = document.createElement('span');
+            typeTag.className = 'px-3 py-1 bg-neon-cyan/10 text-neon-cyan rounded-full text-xs font-medium border border-neon-cyan/20';
+            typeTag.textContent = r.type || 'Room';
+            tagsContainer.appendChild(typeTag);
+
+            const capacityTag = document.createElement('span');
+            capacityTag.className = 'px-3 py-1 bg-white/10 text-white/80 rounded-full text-xs font-medium border border-white/10';
+            capacityTag.textContent = `👥 ${r.capacity} person(s)`;
+            tagsContainer.appendChild(capacityTag);
+
+            const priceActionsContainer = document.createElement('div');
+            priceActionsContainer.className = 'flex items-center justify-between pt-3 border-t border-white/10';
+
+            const priceBox = document.createElement('div');
+            const priceAmount = document.createElement('div');
+            priceAmount.className = 'text-xl font-extrabold text-neon-cyan';
+            priceAmount.textContent = `₱ ${String(r.rate || '0')}`;
+            const priceLabel = document.createElement('div');
+            priceLabel.className = 'text-xs text-text-muted font-normal';
+            priceLabel.textContent = '/month';
+            priceBox.appendChild(priceAmount);
+            priceBox.appendChild(priceLabel);
+
+            const actionsBox = document.createElement('div');
+            actionsBox.className = 'flex items-center gap-2';
+
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-room-btn px-3 py-1.5 rounded-lg border border-neon-cyan text-neon-cyan text-xs font-semibold hover:bg-neon-cyan/10 transition duration-200';
+            editBtn.textContent = 'Edit';
+            editBtn.addEventListener('click', async (ev) => {
+                ev.stopPropagation();
+                await openEditRoomModal(r.id);
+            });
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-room-btn px-3 py-1.5 rounded-lg border border-red-500/50 text-red-300 text-xs font-semibold hover:bg-red-500/10 transition duration-200';
+            delBtn.textContent = 'Delete';
+            delBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                showRoomDeleteConfirm(r.id, r.name);
+            });
+
+            actionsBox.appendChild(editBtn);
+            actionsBox.appendChild(delBtn);
+
+            priceActionsContainer.appendChild(priceBox);
+            priceActionsContainer.appendChild(actionsBox);
+
+            detailsContainer.appendChild(roomName);
+            detailsContainer.appendChild(tagsContainer);
+            detailsContainer.appendChild(priceActionsContainer);
+
+            card.appendChild(imgContainer);
+            card.appendChild(detailsContainer);
+
+            card.addEventListener('click', async () => {
+                try { await openRoomDetailModal(r.id); } catch (err) { console.warn('openRoomDetailModal failed', err); }
+            });
+
+            container.appendChild(card);
+        });
+
+        // Update roster overview statistics
+        const totalRooms = rooms.length;
+        const totalCapacity = rooms.reduce((sum, r) => sum + (r.capacity || 0), 0);
+        const totalOccupied = rooms.reduce((sum, r) => sum + (r.occupancy || 0), 0);
+        const availableSlots = totalCapacity - totalOccupied;
+        
+        const roomsStat = document.getElementById('total-rooms-stat');
+        const occupiedStat = document.getElementById('occupied-rooms-stat');
+        const availableStat = document.getElementById('available-rooms-stat');
+        
+        if (roomsStat) roomsStat.textContent = totalRooms;
+        if (occupiedStat) occupiedStat.textContent = totalOccupied;
+        if (availableStat) availableStat.textContent = availableSlots;
+        
+        console.log('Roster stats updated:', { totalRooms, totalCapacity, totalOccupied, availableSlots });
+    }
+
+    // Room Detail modal functions (fetch from API)
+    async function openRoomDetailModal(roomId) {
+        const rooms = await fetchRoomsFromAPI();
+        const room = rooms.find(r => r.id === roomId);
+        if (!room) return;
+        const modal = document.getElementById('room-detail-modal');
+        const mainImg = document.getElementById('detail-main-img');
+        const nameEl = document.getElementById('detail-room-name');
+        const typeEl = document.getElementById('detail-type');
+        const capEl = document.getElementById('detail-capacity');
+        const occupancyEl = document.getElementById('detail-occupancy');
+        const rateEl = document.getElementById('detail-rate');
+        const prevBtn = document.getElementById('detail-prev');
+        const nextBtn = document.getElementById('detail-next');
+        const editBtn = document.getElementById('detail-edit-btn');
+        const closeBtn = document.getElementById('detail-close-btn');
+        const closeBottom = document.getElementById('detail-close-bottom');
+        const studentsTbody = document.getElementById('detail-students-tbody');
+
+        window._detailRoomImages = Array.isArray(room.images) ? room.images.slice() : [];
+        window._detailRoomIndex = 0;
+
+        nameEl.textContent = room.name || 'Room';
+        typeEl.textContent = `Type: ${room.type || '—'}`;
+        capEl.textContent = `Capacity: ${room.capacity || 0} person(s)`;
+        occupancyEl.textContent = `Occupancy: ${room.occupancy || 0} / ${room.capacity || 0}`;
+        rateEl.textContent = `₱ ${room.rate || 0} /month`;
+        mainImg.src = (window._detailRoomImages[0]) || '';
+
+        // Populate students table
+        if (room.students && room.students.length > 0) {
+            studentsTbody.innerHTML = room.students.map(student => `
+                <tr class="border-b border-white/10 hover:bg-white/5">
+                    <td class="py-3">${escapeHtml(student.student_id)}</td>
+                    <td class="py-3">${escapeHtml(student.name)}</td>
+                    <td class="py-3">${escapeHtml(student.email)}</td>
+                    <td class="py-3">${escapeHtml(student.department)}</td>
+                    <td class="py-3">${escapeHtml(student.year_level)}</td>
+                </tr>
+            `).join('');
+        } else {
+            studentsTbody.innerHTML = '<tr><td colspan="5" class="text-center text-text-muted py-4">No students assigned to this room</td></tr>';
+        }
+
+        function updateMain() {
+            if (!mainImg) return;
+            mainImg.src = window._detailRoomImages[window._detailRoomIndex] || '';
+        }
+
+        if (nextBtn) {
+            nextBtn.onclick = (e) => { e && e.preventDefault(); e && e.stopPropagation(); if (!window._detailRoomImages.length) return; window._detailRoomIndex = (window._detailRoomIndex + 1) % window._detailRoomImages.length; updateMain(); };
+        }
+        if (prevBtn) {
+            prevBtn.onclick = (e) => { e && e.preventDefault(); e && e.stopPropagation(); if (!window._detailRoomImages.length) return; window._detailRoomIndex = (window._detailRoomIndex - 1 + window._detailRoomImages.length) % window._detailRoomImages.length; updateMain(); };
+        }
+
+        if (editBtn) {
+            editBtn.onclick = (e) => { e && e.preventDefault(); e && e.stopPropagation(); closeRoomDetailModal(); openEditRoomModal(roomId); };
+        }
+        const closeHandlers = [closeBtn, closeBottom];
+        closeHandlers.forEach(btn => {
+            if (btn) btn.onclick = (e) => { e && e.preventDefault(); e && e.stopPropagation(); closeRoomDetailModal(); };
+        });
+
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeRoomDetailModal() {
+        const modal = document.getElementById('room-detail-modal');
+        if (modal) modal.classList.add('hidden');
+        window._detailRoomImages = null;
+        window._detailRoomIndex = 0;
+    }
+
+    // Wire create room form if present (simple localStorage persistence)
+    var form = document.getElementById('room-creation-form');
+    // Create room logic extracted so we can call it from a button click (avoids relying on form submit handlers elsewhere)
+    async function createRoomFromForm() {
+        try {
+            const name = document.getElementById('room-name')?.value.trim() || 'Untitled Room';
+            const capacity = parseInt(document.getElementById('room-capacity')?.value || '1', 10) || 1;
+            const rate = parseFloat(document.getElementById('room-rate')?.value || '0') || 0;
+            const typeSel = document.getElementById('room-type');
+            let type = typeSel ? typeSel.value : '';
+            if (type === 'other') {
+                const custom = document.getElementById('room-type-custom');
+                if (custom) type = custom.value.trim() || 'other';
+            }
+
+            // Use the stored original file objects (not data URLs)
+            const imageFiles = window._selectedImageFiles || [];
+            console.log('Creating room with', imageFiles.length, 'image files');
+
+            const roomData = { name, capacity, rate, type };
+            const newRoom = await createRoomViaAPI(roomData, imageFiles);
+            
+            if (!newRoom) {
+                console.error('Failed to create room via API');
+                return false;
+            }
+            
+            console.log('Room created via API:', newRoom);
+
+            // reset form UI
+            const form = document.getElementById('room-creation-form');
+            form?.reset?.();
+            const fileInput = document.getElementById('room-picture');
+            if (fileInput) fileInput.value = '';  // Clear the file input after successful upload
+            window._selectedImageFiles = [];
+            window._selectedPictures = [];
+            updatePicturePreview();
+            document.getElementById('add-room-modal')?.classList.add('hidden');
+            const toggleBtn = document.getElementById('toggle-room-form');
+            if (toggleBtn) {
+                toggleBtn.querySelector('.show-text')?.classList.remove('hidden');
+                toggleBtn.querySelector('.hide-text')?.classList.add('hidden');
+            }
+            // render immediately
+            renderRooms();
+            // ensure we don't let other handlers run (no redirect)
+            return true;
+        } catch (err) {
+            console.error('createRoomFromForm error', err);
+            return false;
+        }
+    }
+
+    // Attach to the create button click and ensure form reference exists
+    const createRoomBtn = document.getElementById('create-room-btn');
+    var form = document.getElementById('room-creation-form');
+
+    // If no property id is available, disable the create button to avoid API errors
+    if (createRoomBtn && !getPropertyId()) {
+        createRoomBtn.disabled = true;
+        createRoomBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        createRoomBtn.title = 'No property available. Please ensure a property is set up.';
+    }
+
+    if (createRoomBtn) {
+        createRoomBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            createRoomFromForm();
+        });
+    }
+
+    // Also keep a safe submit handler on the form (in case user presses Enter)
+    if (form && !form.dataset.bound) {
+        form.addEventListener('submit', (e) => { e.preventDefault(); e.stopPropagation(); createRoomFromForm(); });
+        form.dataset.bound = '1';
+    }
+
+    // Handle add room modal open/close
+    const toggleBtn = document.getElementById('toggle-room-form');
+    const addRoomModal = document.getElementById('add-room-modal');
+    const cancelBtn = document.getElementById('cancel-room-form');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addRoomModal?.classList.toggle('hidden');
+            toggleBtn.querySelector('.show-text')?.classList.toggle('hidden');
+            toggleBtn.querySelector('.hide-text')?.classList.toggle('hidden');
+        });
+    }
+    // Delegated fallback: if the above listener doesn't run (overlaying element, or other issues), catch clicks anywhere
+    document.addEventListener('click', (e) => {
+        const t = e.target.closest && e.target.closest('#toggle-room-form');
+        if (t) {
+            e.preventDefault();
+            const modal = document.getElementById('add-room-modal');
+            modal?.classList.toggle('hidden');
+            const btn = document.getElementById('toggle-room-form');
+            btn?.querySelector('.show-text')?.classList.toggle('hidden');
+            btn?.querySelector('.hide-text')?.classList.toggle('hidden');
+        }
+    });
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addRoomModal?.classList.add('hidden');
+            toggleBtn?.querySelector('.show-text')?.classList.remove('hidden');
+            toggleBtn?.querySelector('.hide-text')?.classList.add('hidden');
+        });
+    }
+
+    // Wire choose picture button + preview
+    const pickBtn = document.getElementById('room-picture-btn');
+    const fileInput = document.getElementById('room-picture');
+    const previewGrid = document.getElementById('room-picture-preview-grid');
+    const pictureCount = document.getElementById('picture-count');
+
+    // Store selected images as data on the form so they persist when re-opening file picker
+    window._selectedPictures = [];
+
+    if (pickBtn && fileInput) {
+        pickBtn.addEventListener('click', (e) => { e.preventDefault(); try { fileInput.style.pointerEvents = 'auto'; fileInput.click(); } catch(err){ fileInput.click(); } });
+        fileInput.addEventListener('change', (ev) => {
+            const files = Array.from(ev.target.files || []);
+            if (!files.length) return;
+
+            // Store the original file objects for later upload
+            window._selectedImageFiles = files;
+
+            // Compress/read all files then update previews - aggressive compression to avoid storage quota
+            Promise.all(files.map(f => compressImageFile(f, 480, 0.4).catch(() => compressImageFile(f, 320, 0.3)).catch(() => readFileAsDataURL(f))))
+                .then((results) => {
+                    window._selectedPictures = results;
+                    updatePicturePreview();
+                })
+                .catch((err) => {
+                    console.warn('Error compressing images, falling back to raw reads', err);
+                    Promise.all(files.map(f => readFileAsDataURL(f))).then((res) => {
+                        window._selectedPictures = res;
+                        updatePicturePreview();
+                    }).catch((e) => console.error('Fallback read failed', e));
+                });
+                // Don't clear the file input - we need it for the actual upload
+        });
+    }
+
+    function updatePicturePreview() {
+        if (!previewGrid) return;
+        previewGrid.innerHTML = '';
+        window._selectedPictures.forEach((src, idx) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group';
+            wrapper.style.position = 'relative';
+
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = 'w-full h-24 object-cover rounded-md border border-white/10 cursor-pointer';
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                try { _openInlineViewer(window._selectedPictures || [], idx); } catch(err) {
+                    try {
+                        window._roomViewerImages = window._selectedPictures || [];
+                        window._roomViewerIndex = idx;
+                        const modal = document.getElementById('image-viewer-modal');
+                        const imgEl = document.getElementById('image-viewer-img');
+                        if (modal && imgEl) { imgEl.src = window._roomViewerImages[window._roomViewerIndex]; modal.classList.remove('hidden'); }
+                    } catch(e) { console.warn('preview open failed', e); }
+                }
+            });
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-600 text-sm font-bold';
+            closeBtn.textContent = '×';
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window._selectedPictures.splice(idx, 1);
+                updatePicturePreview();
+            });
+
+            wrapper.appendChild(img);
+            wrapper.appendChild(closeBtn);
+            previewGrid.appendChild(wrapper);
+        });
+
+        if (window._selectedPictures.length > 0) {
+            previewGrid.classList.remove('hidden');
+            if (pictureCount) pictureCount.textContent = `${window._selectedPictures.length} picture(s) selected`;
+        } else {
+            previewGrid.classList.add('hidden');
+            if (pictureCount) pictureCount.textContent = '';
+        }
+    }
+
+    // Handle room type custom input visibility
+    const roomTypeSelect = document.getElementById('room-type');
+    const roomTypeCustom = document.getElementById('room-type-custom');
+    if (roomTypeSelect) {
+        roomTypeSelect.addEventListener('change', () => {
+            if (roomTypeCustom) {
+                roomTypeCustom.classList.toggle('hidden', roomTypeSelect.value !== 'other');
+            }
+        });
+    }
+
+    // Initial render
+    function initializeRooms() {
+        console.log('Initializing rooms');
+        renderRooms();
+    }
+
+    // Render on DOM load
+    function initializeRooms() {
+        console.log('Initializing rooms');
+        renderRooms();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeRooms);
+    } else {
+        initializeRooms();
+    }
+
+    // Edit room modal functions (fetch from API)
+    async function openEditRoomModal(roomId) {
+        const rooms = await fetchRoomsFromAPI();
+        const room = rooms.find(r => r.id === roomId);
+        if (!room) {
+            console.error('Room not found:', roomId);
+            return;
+        }
+
+        document.getElementById('edit-room-name').value = room.name || '';
+        document.getElementById('edit-room-capacity').value = room.capacity || '';
+        document.getElementById('edit-room-rate').value = room.rate || '';
+        document.getElementById('edit-room-type').value = room.type && !room.type.startsWith('custom:') ? room.type : 'other';
+        
+        const editRoomTypeCustom = document.getElementById('edit-room-type-custom');
+        if (room.type && room.type.startsWith('custom:')) {
+            editRoomTypeCustom.value = room.type.replace('custom:', '');
+            editRoomTypeCustom.classList.remove('hidden');
+        } else {
+            editRoomTypeCustom.classList.add('hidden');
+        }
+
+        document.getElementById('edit-room-modal').classList.remove('hidden');
+        window._editingRoomId = roomId;
+        // Store image objects with IDs for tracking deletions
+        window._editRoomImageObjects = Array.isArray(room.image_objects) ? room.image_objects.slice() : [];
+        // Also store just URLs for backward compatibility
+        window._editRoomOriginalPictures = window._editRoomImageObjects.map(img => img.url);
+        // Store the ORIGINAL image IDs before any deletions occur
+        window._editRoomOriginalImageIds = window._editRoomImageObjects.map(o => o.id);
+        window._editRoomNewPictures = [];
+        window._editRoomNewFiles = [];  // Reset new files when opening modal
+        // Initialize remaining IDs to all original IDs (will be updated as user deletes)
+        window._editRoomRemainingImageIds = window._editRoomOriginalImageIds.slice();
+        console.log('Opened edit modal for room', roomId, 'with', window._editRoomImageObjects.length, 'images and original IDs:', window._editRoomOriginalImageIds);
+        renderEditPicturePreview();
+    }
+
+    function closeEditRoomModal() {
+        document.getElementById('edit-room-modal').classList.add('hidden');
+        window._editingRoomId = null;
+    }
+
+    // Room delete confirmation modal
+    function showRoomDeleteConfirm(roomId, roomName) {
+        const modal = document.getElementById('delete-confirm-modal');
+        const title = document.getElementById('delete-modal-title');
+        const message = document.getElementById('delete-modal-message');
+        const confirmBtn = document.getElementById('delete-confirm-btn');
+        const cancelBtn = document.getElementById('delete-cancel-btn');
+        const closeBtn = document.getElementById('delete-modal-close');
+
+        if (!modal) return;
+
+        title.textContent = 'Delete Room';
+        message.textContent = `Are you sure you want to delete "${roomName}"? This action cannot be undone.`;
+
+        // Clear previous listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        const newCloseBtn = closeBtn.cloneNode(true);
+        
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+
+        // Bind new listeners
+        newConfirmBtn.addEventListener('click', async () => {
+            // Use API to delete room
+            await deleteRoomViaAPI(roomId);
+            modal.classList.add('hidden');
+            renderRooms();
+            renderTrashRooms && renderTrashRooms();
+        });
+
+        newCancelBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        newCloseBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        modal.classList.remove('hidden');
+    }
+
+    const editRoomForm = document.getElementById('edit-room-form');
+    if (editRoomForm) {
+        editRoomForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!window._editingRoomId) {
+                console.error('No room ID set for editing');
+                return;
+            }
+
+            const roomId = window._editingRoomId;
+            const name = document.getElementById('edit-room-name').value.trim() || 'Untitled Room';
+            const capacity = parseInt(document.getElementById('edit-room-capacity').value || '1', 10) || 1;
+            const rate = parseFloat(document.getElementById('edit-room-rate').value || '0') || 0;
+            
+            const editType = document.getElementById('edit-room-type').value;
+            let type = editType;
+            if (editType === 'other') {
+                const custom = document.getElementById('edit-room-type-custom').value.trim();
+                type = custom || 'other';
+            }
+
+            // Calculate which images were deleted
+            const remainingIds = window._editRoomRemainingImageIds || [];
+            const originalImageIds = window._editRoomOriginalImageIds || [];
+            const deletedImageIds = originalImageIds.filter(id => !remainingIds.includes(id));
+            
+            // Use the stored original file objects (not data URLs)
+            const newImageFiles = window._editRoomNewFiles || [];
+
+            // Store the data for confirmation
+            window._pendingEditData = {
+                roomId,
+                roomData: { name, capacity, rate, type },
+                newImageFiles,
+                deletedImageIds
+            };
+
+            // Show confirmation modal
+            showEditRoomConfirmation(name, capacity, rate, type, newImageFiles.length, deletedImageIds.length);
+        });
+
+        // Confirmation modal handlers
+        const confirmModal = document.getElementById('edit-room-confirm-modal');
+        const confirmBtn = document.getElementById('confirm-save-btn');
+        const cancelConfirmBtn = document.getElementById('cancel-confirm-btn');
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async () => {
+                const data = window._pendingEditData;
+                if (!data) return;
+
+                const updatedRoom = await updateRoomViaAPI(data.roomId, data.roomData, data.newImageFiles, data.deletedImageIds);
+                
+                if (!updatedRoom) {
+                    console.error('Failed to update room');
+                    alert('Failed to update room. Please try again.');
+                    return;
+                }
+
+                console.log('Room updated via API:', updatedRoom);
+                alert('Room updated successfully!');
+                
+                // Clear file input after successful upload
+                const fileInput = document.getElementById('edit-room-picture');
+                if (fileInput) fileInput.value = '';
+                window._editRoomNewFiles = [];
+                window._editRoomNewPictures = [];
+                window._editRoomImageObjects = [];
+                window._editRoomRemainingImageIds = [];
+                window._pendingEditData = null;
+                
+                if (confirmModal) confirmModal.classList.add('hidden');
+                closeEditRoomModal();
+                
+                // Add a slight delay to ensure API update is complete
+                setTimeout(() => {
+                    renderRooms();
+                }, 500);
+            });
+        }
+
+        if (cancelConfirmBtn) {
+            cancelConfirmBtn.addEventListener('click', () => {
+                if (confirmModal) confirmModal.classList.add('hidden');
+                window._pendingEditData = null;
+            });
+        }
+    }
+
+    // Show edit room confirmation modal
+    function showEditRoomConfirmation(name, capacity, rate, type, newFilesCount, deletedImagesCount) {
+        const modal = document.getElementById('edit-room-confirm-modal');
+        const summary = document.getElementById('confirm-changes-summary');
+        
+        if (!modal || !summary) return;
+
+        let summaryHtml = '';
+        summaryHtml += `<div><strong>Room Name:</strong> ${escapeHtml(name)}</div>`;
+        summaryHtml += `<div><strong>Capacity:</strong> ${capacity} person(s)</div>`;
+        summaryHtml += `<div><strong>Monthly Rate:</strong> ₱${rate}</div>`;
+        summaryHtml += `<div><strong>Room Type:</strong> ${escapeHtml(type)}</div>`;
+        
+        if (newFilesCount > 0) {
+            summaryHtml += `<div class="text-neon-green"><strong>➕ New Images:</strong> ${newFilesCount} image(s) will be added</div>`;
+        }
+        if (deletedImagesCount > 0) {
+            summaryHtml += `<div class="text-neon-yellow"><strong>❌ Images to Delete:</strong> ${deletedImagesCount} image(s) will be removed</div>`;
+        }
+        if (newFilesCount === 0 && deletedImagesCount === 0) {
+            summaryHtml += `<div class="text-text-muted"><strong>Images:</strong> No changes to images</div>`;
+        }
+        
+        summary.innerHTML = summaryHtml;
+        modal.classList.remove('hidden');
+    }
+
+    // Edit picture handling
+    const editFileInput = document.getElementById('edit-room-picture');
+    function renderEditPicturePreview() {
+        const grid = document.getElementById('edit-room-picture-preview-grid');
+        const countEl = document.getElementById('edit-picture-count');
+        if (!grid) return;
+        grid.innerHTML = '';
+        
+        // Track remaining image IDs (for deletion detection)
+        window._editRoomRemainingImageIds = [];
+        
+        // render originals first
+        (window._editRoomImageObjects || []).forEach((imgObj, idx) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'relative group';
+            const img = document.createElement('img');
+            img.src = imgObj.url;
+            img.className = 'w-full h-24 object-cover rounded-md border border-white/10';
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const allImages = window._editRoomImageObjects.map(o => o.url).concat(window._editRoomNewPictures || []);
+                const index = idx;
+                try { _openInlineViewer(allImages, index); } catch(err) { console.warn('open viewer failed', err); }
+            });
+            wrap.appendChild(img);
+            
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs';
+            btn.textContent = '×';
+            btn.dataset.imageId = imgObj.id;
+            btn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                const imageId = parseInt(btn.dataset.imageId, 10);
+                // Remove from image objects
+                window._editRoomImageObjects = window._editRoomImageObjects.filter(o => o.id !== imageId);
+                console.log('Marked image', imageId, 'for deletion');
+                renderEditPicturePreview();
+            });
+            wrap.appendChild(btn);
+            grid.appendChild(wrap);
+            
+            // Track this image ID as remaining
+            window._editRoomRemainingImageIds.push(imgObj.id);
+        });
+        
+        // render new ones
+        (window._editRoomNewPictures || []).forEach((src, idx) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'relative group';
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = 'w-full h-24 object-cover rounded-md border border-white/10';
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const allImages = window._editRoomImageObjects.map(o => o.url).concat(window._editRoomNewPictures || []);
+                const index = (window._editRoomImageObjects || []).length + idx;
+                try { _openInlineViewer(allImages, index); } catch(err) { console.warn('open viewer failed', err); }
+            });
+            wrap.appendChild(img);
+            
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs';
+            btn.textContent = '×';
+            btn.dataset.newIndex = idx;
+            btn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                const i = parseInt(btn.dataset.newIndex, 10);
+                if (!isNaN(i)) {
+                    window._editRoomNewPictures.splice(i, 1);
+                    console.log('Removed new picture at index', i);
+                    renderEditPicturePreview();
+                }
+            });
+            wrap.appendChild(btn);
+            grid.appendChild(wrap);
+        });
+        
+        const total = (window._editRoomImageObjects || []).length + (window._editRoomNewPictures || []).length;
+        if (countEl) countEl.textContent = total ? `${total} picture(s)` : '';
+    }
+    if (editFileInput) {
+        editFileInput.addEventListener('change', (ev) => {
+            const files = Array.from(ev.target.files || []);
+            if (!files.length) return;
+
+            // Store the original file objects for later upload
+            window._editRoomNewFiles = (window._editRoomNewFiles || []).concat(files);
+            console.log('Added', files.length, 'new files, total:', window._editRoomNewFiles.length);
+
+            // Aggressive compression for edit form as well
+            Promise.all(files.map(f => compressImageFile(f, 480, 0.4).catch(() => compressImageFile(f, 320, 0.3)).catch(() => readFileAsDataURL(f))))
+                .then((results) => {
+                    window._editRoomNewPictures = (window._editRoomNewPictures || []).concat(results);
+                    renderEditPicturePreview();
+                })
+                .catch((err) => {
+                    console.warn('Edit image compression failed, falling back', err);
+                    Promise.all(files.map(f => readFileAsDataURL(f))).then((res) => {
+                        window._editRoomNewPictures = (window._editRoomNewPictures || []).concat(res);
+                        renderEditPicturePreview();
+                    }).catch((e) => console.error('Fallback read failed for edit images', e));
+                });
+                // Don't clear the file input - we need it for the actual upload
+        });
+    }
+
+    const editRoomTypeSelect = document.getElementById('edit-room-type');
+    const editRoomTypeCustom = document.getElementById('edit-room-type-custom');
+    if (editRoomTypeSelect) {
+        editRoomTypeSelect.addEventListener('change', () => {
+            if (editRoomTypeCustom) {
+                editRoomTypeCustom.classList.toggle('hidden', editRoomTypeSelect.value !== 'other');
+            }
+        });
+    }
+
+    const cancelEditBtn = document.getElementById('cancel-edit-room-form');
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeEditRoomModal();
+        });
+    }
+
+})();
+
+</script>
+

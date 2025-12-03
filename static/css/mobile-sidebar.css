@@ -1,0 +1,452 @@
+/* ================================================================
+   MOBILE SIDEBAR TOGGLE STYLES - Base.html
+   ================================================================
+   Responsive sidebar menu for mobile devices
+   Handles toggle/show/hide of sidebar navigation
+   ================================================================ */
+
+/* ================================================================
+   MOBILE SIDEBAR STYLING
+   ================================================================ */
+
+@media (max-width: 1024px) {
+    .sidebar {
+        position: fixed !important;
+        left: 0;
+        top: 80px;
+        height: calc(100vh - 80px);
+        width: 256px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 30;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    #menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .sidebar {
+        width: 100vw;
+        max-width: none;
+    }
+
+    #menu-toggle {
+        display: flex;
+    }
+}
+
+@media (min-width: 1025px) {
+    .sidebar {
+        transform: translateX(0) !important;
+    }
+
+    #menu-toggle {
+        display: none !important;
+    }
+}
+
+/* ================================================================
+   SIDEBAR OVERLAY (Mobile only)
+   ================================================================ */
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 25;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.sidebar-overlay.hide {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+/* ================================================================
+   SIDEBAR NAVIGATION ITEMS RESPONSIVE
+   ================================================================ */
+
+@media (max-width: 1024px) {
+    .sidebar nav a {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .sidebar nav a:hover {
+        transform: translateX(8px);
+        transition: all 0.2s ease;
+    }
+}
+
+@media (max-width: 640px) {
+    .sidebar nav a {
+        padding: 0.85rem 1.25rem;
+        font-size: 0.95rem;
+        border-radius: 0.5rem;
+        margin: 0.25rem 0;
+    }
+
+    .sidebar nav {
+        padding: 0.5rem 0;
+    }
+}
+
+/* ================================================================
+   HEADER TOP BAR - Mobile adjustments
+   ================================================================ */
+
+@media (max-width: 768px) {
+    header {
+        padding: 0.75rem 1rem !important;
+    }
+
+    .flex-shrink-0 {
+        padding: 0.5rem;
+    }
+
+    #current-view-title {
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    #current-view-title {
+        font-size: 0.8rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #menu-toggle {
+        padding: 0.25rem;
+        font-size: 1.25rem;
+    }
+}
+
+/* ================================================================
+   NOTIFICATIONS & PROFILE DROPDOWN - Mobile
+   ================================================================ */
+
+@media (max-width: 768px) {
+    #notification-dropdown,
+    #profile-dropdown {
+        position: fixed !important;
+        width: calc(100vw - 2rem) !important;
+        left: 1rem !important;
+        right: auto !important;
+        max-width: none;
+        top: auto !important;
+        bottom: auto !important;
+    }
+
+    /* Position dropdowns below the header */
+    #notification-dropdown {
+        top: 70px !important;
+        z-index: 9997 !important;
+    }
+
+    #profile-dropdown {
+        top: 70px !important;
+        z-index: 99999 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #notification-dropdown,
+    #profile-dropdown {
+        width: calc(100vw - 1.5rem) !important;
+        left: 0.75rem !important;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+}
+
+/* ================================================================
+   MAIN CONTENT AREA - Mobile adjustments
+   ================================================================ */
+
+@media (max-width: 1024px) {
+    main {
+        height: auto !important;
+        margin-left: 0 !important;
+        padding: 1rem !important;
+    }
+}
+
+@media (max-width: 640px) {
+    main {
+        padding: 0.75rem !important;
+    }
+}
+
+/* ================================================================
+   SCROLLBAR STYLING
+   ================================================================ */
+
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: #4f46e5;
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background-color: #1f2937;
+}
+
+/* ================================================================
+   ANIMATIONS
+   ================================================================ */
+
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutToLeft {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+
+/* ================================================================
+   REDUCED MOTION SUPPORT (Accessibility)
+   ================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .sidebar-overlay,
+    header,
+    main {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ================================================================
+   TOUCH DEVICE OPTIMIZATIONS
+   ================================================================ */
+
+@media (hover: none) and (pointer: coarse) {
+    .sidebar nav a,
+    .mobile-nav-item {
+        padding: 1rem;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    #menu-toggle {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* ================================================================
+   MOBILE HOVER EFFECTS FOR CARDS - Home, My Home, Survey
+   ================================================================ */
+
+/* Add hover and active effects to glass-card and content cards on mobile */
+@media (max-width: 768px) {
+    /* Add spacing above content to prevent overlap with nav */
+    main {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+
+    /* Section spacing - critical for mobile nav overlap prevention */
+    section {
+        margin-top: 2rem !important;
+        margin-bottom: 2rem !important;
+        padding-top: 1.5rem !important;
+    }
+
+    section.glass-card {
+        margin-top: 1.5rem !important;
+    }
+
+    /* Add bottom spacing to cards for separation */
+    .glass-card {
+        margin-bottom: 1.5rem !important;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    /* Touch-friendly hover and active effects */
+    .glass-card:active {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0, 255, 255, 0.2);
+    }
+
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 255, 255, 0.15);
+    }
+
+    /* Add active class styling for touch devices */
+    .glass-card.is-active {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0, 255, 255, 0.2);
+    }
+
+    /* Prevent content from overlapping nav bar at top */
+    .glass-card:first-of-type {
+        margin-top: 1rem !important;
+    }
+
+    /* Add hover effects to clickable content sections */
+    .myhome-panel {
+        transition: all 0.3s ease;
+    }
+
+    /* Hover effect for myhome pills/buttons */
+    .myhome-pill {
+        transition: all 0.2s ease;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .myhome-pill:active {
+        transform: scale(1.08);
+        box-shadow: 0 6px 16px rgba(0, 255, 157, 0.3);
+    }
+
+    .myhome-pill:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 255, 157, 0.2);
+    }
+
+    .myhome-pill.is-active {
+        transform: scale(1.08);
+        box-shadow: 0 6px 16px rgba(0, 255, 157, 0.3);
+    }
+
+    /* Active pill styling */
+    .myhome-pill-active:active,
+    .myhome-pill-active:hover,
+    .myhome-pill-active.is-active {
+        background: rgba(0, 255, 157, 0.25);
+        box-shadow: 0 6px 16px rgba(0, 255, 157, 0.3);
+    }
+
+    /* Inactive pill styling */
+    .myhome-pill-inactive:active,
+    .myhome-pill-inactive:hover,
+    .myhome-pill-inactive.is-active {
+        background: rgba(0, 255, 157, 0.15);
+        color: rgba(0, 255, 157, 1);
+        box-shadow: 0 4px 12px rgba(0, 255, 157, 0.15);
+    }
+
+    /* Grid spacing */
+    .grid {
+        gap: 1.5rem !important;
+    }
+
+    /* Extra spacing for post feed items */
+    .post-feed {
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+
+    .post-feed article {
+        margin-bottom: 1.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .post-feed article:active,
+    .post-feed article.is-active {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(0, 255, 255, 0.12);
+    }
+
+    .post-feed article:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(0, 255, 255, 0.1);
+    }
+}
+
+/* Extra hover effects for smaller screens */
+@media (max-width: 480px) {
+    /* Extra top padding for very small screens */
+    main {
+        padding-top: 2.5rem !important;
+    }
+
+    section {
+        margin-top: 2.5rem !important;
+        padding-top: 1.75rem !important;
+    }
+
+    .glass-card {
+        margin-bottom: 1.5rem !important;
+    }
+
+    .glass-card:active,
+    .glass-card.is-active {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(0, 255, 255, 0.15);
+    }
+
+    .glass-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(0, 255, 255, 0.12);
+    }
+
+    .myhome-pill:active,
+    .myhome-pill.is-active {
+        transform: scale(1.05);
+    }
+
+    .myhome-pill:hover {
+        transform: scale(1.02);
+    }
+}

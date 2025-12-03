@@ -1,0 +1,371 @@
+<!--
+templates/students/partials/my_home_boarders_students.html
+-->
+
+
+{% if user.is_authenticated and user.profile.role == 'student' %}
+<div class="myhome-panel hidden" data-panel="boarders">
+    <!-- Boarding Key Input Section -->
+    <div class="glass-card rounded-2xl p-6 border border-white/10 mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-xs uppercase tracking-[0.5em] text-neon-cyan font-semibold">Join a Boarding House</p>
+                <h3 class="text-2xl font-bold text-white mt-1">Enter Your Boarding Key</h3>
+            </div>
+        </div>
+        
+        <div class="space-y-4">
+            <p class="text-sm text-text-muted">Enter the unique boarding key provided by your property owner to view room details and connect with them.</p>
+            
+            <!-- Boarding Key Input -->
+            <div>
+                <label class="block text-xs text-text-muted uppercase tracking-[0.3em] mb-2">Boarding Key</label>
+                <div class="flex gap-3">
+                    <input 
+                        type="text" 
+                        id="boarding-key-input" 
+                        placeholder="e.g., BOARD-KEY-12345" 
+                        class="flex-1 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-neon-cyan focus:ring-2 focus:ring-neon-cyan/20 placeholder-text-muted uppercase"
+                        maxlength="50"
+                    />
+                    <button 
+                        id="submit-boarding-key-btn" 
+                        type="button"
+                        class="px-6 py-3 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold hover:bg-neon-cyan/30 transition"
+                    >
+                        Enter
+                    </button>
+                </div>
+            </div>
+            
+            <div id="boarding-key-message" class="hidden text-sm px-4 py-3 rounded-xl"></div>
+        </div>
+    </div>
+
+    <!-- Your Current Rooms Section -->
+    <div class="space-y-6">
+        <div class="glass-card rounded-2xl p-6 border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.5em] text-neon-cyan font-semibold">My Boarding</p>
+                    <h3 class="text-2xl font-bold text-white mt-1">Your Current Room</h3>
+                </div>
+            </div>
+            
+            <!-- Empty State or Room Display -->
+            <div id="rooms-container" class="space-y-4">
+                <div class="text-center py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-text-muted mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 4v4m4-4v4" />
+                    </svg>
+                    <p class="text-text-muted">No boarding information yet. Enter your boarding key above to get started.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Details Modal -->
+    <div id="room-details-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur flex items-center justify-center px-4 py-6">
+        <div class="glass-card rounded-2xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="sticky top-0 bg-inherit border-b border-white/10 p-6 flex items-center justify-between z-10">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.5em] text-neon-cyan font-semibold">Room Details</p>
+                    <h2 class="text-2xl font-bold text-white mt-1" id="room-modal-title"></h2>
+                </div>
+                <button id="close-room-details" class="text-text-muted hover:text-white text-2xl transition">&times;</button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 space-y-6">
+                <!-- Room Info Section -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-white">Room Information</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass-card rounded-xl p-4 border border-white/10">
+                            <p class="text-xs text-text-muted uppercase tracking-[0.2em] mb-1">Room Type</p>
+                            <p id="modal-room-type" class="text-white font-semibold"></p>
+                        </div>
+                        <div class="glass-card rounded-xl p-4 border border-white/10">
+                            <p class="text-xs text-text-muted uppercase tracking-[0.2em] mb-1">Capacity</p>
+                            <p id="modal-room-capacity" class="text-white font-semibold"></p>
+                        </div>
+                        <div class="glass-card rounded-xl p-4 border border-white/10">
+                            <p class="text-xs text-text-muted uppercase tracking-[0.2em] mb-1">Monthly Rate</p>
+                            <p id="modal-room-rate" class="text-neon-cyan font-semibold"></p>
+                        </div>
+                        <div class="glass-card rounded-xl p-4 border border-white/10">
+                            <p class="text-xs text-text-muted uppercase tracking-[0.2em] mb-1">Availability</p>
+                            <p id="modal-room-availability" class="text-white font-semibold"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room Images -->
+                <div id="modal-images-section" class="hidden space-y-4">
+                    <h3 class="text-lg font-semibold text-white">Room Gallery</h3>
+                    <div id="modal-room-images" class="grid grid-cols-2 gap-4"></div>
+                </div>
+
+                <!-- Property Owner Info -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-white">Property Owner</h3>
+                    <div class="glass-card rounded-xl p-4 border border-white/10 space-y-3">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-xs text-text-muted uppercase tracking-[0.2em] mb-1">Name</p>
+                                <p id="modal-owner-name" class="text-white font-semibold"></p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 pt-3 border-t border-white/10">
+                            <div>
+                                <p class="text-xs text-text-muted uppercase tracking-[0.2em] mb-1">Email</p>
+                                <p id="modal-owner-email" class="text-white text-sm break-all"></p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-text-muted uppercase tracking-[0.2em] mb-1">Phone</p>
+                                <p id="modal-owner-phone" class="text-white font-semibold"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Property Location -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-white">Property Location</h3>
+                    <div class="glass-card rounded-xl p-4 border border-white/10 space-y-2">
+                        <p id="modal-property-address" class="text-white"></p>
+                        <p id="modal-property-location" class="text-text-muted text-sm"></p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 pt-4 border-t border-white/10">
+                    <button id="contact-owner-btn" class="flex-1 px-4 py-3 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold hover:bg-neon-cyan/30 transition">
+                        📧 Contact Owner
+                    </button>
+                    <button id="remove-room-btn" class="flex-1 px-4 py-3 rounded-xl bg-red-500/20 border border-red-500 text-red-400 font-semibold hover:bg-red-500/30 transition">
+                        ✕ Remove Room
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for Boarding Key Input -->
+    <script>
+    (function() {
+        const boardingKeyInput = document.getElementById('boarding-key-input');
+        const submitBtn = document.getElementById('submit-boarding-key-btn');
+        const messageEl = document.getElementById('boarding-key-message');
+        const roomsContainer = document.getElementById('rooms-container');
+        const roomDetailsModal = document.getElementById('room-details-modal');
+
+        async function submitBoardingKey() {
+            const key = boardingKeyInput.value.trim().toUpperCase();
+            
+            if (!key) {
+                showMessage('Please enter a boarding key', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Checking...';
+
+            try {
+                // Call API to get room details by boarding key
+                const response = await fetch('/students/api/boarding-key/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                    },
+                    body: JSON.stringify({ boarding_key: key })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showMessage(data.error || 'Invalid boarding key', 'error');
+                    return;
+                }
+
+                // Successfully retrieved room data
+                const roomData = data.room;
+                const ownerData = data.owner;
+
+                // Display room in container
+                displayRoom(roomData, ownerData);
+                
+                // Clear input
+                boardingKeyInput.value = '';
+                showMessage('Room found! Click on it to view details.', 'success');
+
+            } catch (err) {
+                console.error('Error submitting boarding key:', err);
+                showMessage('An error occurred. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Enter';
+            }
+        }
+
+        function showMessage(msg, type) {
+            messageEl.textContent = msg;
+            messageEl.classList.remove('hidden');
+            messageEl.className = `hidden text-sm px-4 py-3 rounded-xl ${
+                type === 'error' 
+                    ? 'bg-red-500/20 border border-red-500 text-red-400' 
+                    : 'bg-neon-green/20 border border-neon-green text-neon-green'
+            }`;
+            messageEl.classList.remove('hidden');
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                messageEl.classList.add('hidden');
+            }, 5000);
+        }
+
+        function displayRoom(roomData, ownerData) {
+            // Clear previous rooms
+            roomsContainer.innerHTML = '';
+
+            // Create room card
+            const card = document.createElement('div');
+            card.className = 'glass-card rounded-2xl border border-white/10 overflow-hidden hover:border-neon-cyan/30 cursor-pointer transition p-4 space-y-4';
+            
+            // Room images
+            if (roomData.images && roomData.images.length > 0) {
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'h-48 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center';
+                const img = document.createElement('img');
+                img.src = roomData.images[0];
+                img.alt = roomData.name;
+                img.className = 'w-full h-full object-cover';
+                imgContainer.appendChild(img);
+                card.appendChild(imgContainer);
+            }
+
+            // Room info
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'space-y-2';
+            
+            const roomName = document.createElement('h3');
+            roomName.className = 'text-xl font-bold text-white';
+            roomName.textContent = roomData.name;
+            infoDiv.appendChild(roomName);
+
+            const roomType = document.createElement('p');
+            roomType.className = 'text-sm text-text-muted';
+            roomType.textContent = `${roomData.type} • ${roomData.capacity} person(s)`;
+            infoDiv.appendChild(roomType);
+
+            const roomRate = document.createElement('p');
+            roomRate.className = 'text-lg font-bold text-neon-cyan';
+            roomRate.textContent = `₱${roomData.rate}/month`;
+            infoDiv.appendChild(roomRate);
+
+            const ownerName = document.createElement('p');
+            ownerName.className = 'text-sm text-neon-cyan pt-2 border-t border-white/10';
+            ownerName.textContent = `Owner: ${ownerData.full_name}`;
+            infoDiv.appendChild(ownerName);
+
+            card.appendChild(infoDiv);
+
+            // Click handler to show details
+            card.addEventListener('click', () => {
+                showRoomDetails(roomData, ownerData);
+            });
+
+            roomsContainer.appendChild(card);
+        }
+
+        function showRoomDetails(roomData, ownerData) {
+            // Populate modal fields
+            document.getElementById('room-modal-title').textContent = roomData.name;
+            document.getElementById('modal-room-type').textContent = roomData.type;
+            document.getElementById('modal-room-capacity').textContent = `${roomData.capacity} person(s)`;
+            document.getElementById('modal-room-rate').textContent = `₱${roomData.rate}/month`;
+            document.getElementById('modal-room-availability').textContent = roomData.is_available ? 'Available' : 'Not Available';
+
+            // Room images
+            if (roomData.images && roomData.images.length > 0) {
+                const imagesSection = document.getElementById('modal-images-section');
+                const imagesGrid = document.getElementById('modal-room-images');
+                imagesGrid.innerHTML = roomData.images.map(img => 
+                    `<img src="${img}" alt="Room" class="w-full h-40 object-cover rounded-lg border border-white/10">`
+                ).join('');
+                imagesSection.classList.remove('hidden');
+            } else {
+                document.getElementById('modal-images-section').classList.add('hidden');
+            }
+
+            // Owner info
+            document.getElementById('modal-owner-name').textContent = ownerData.full_name;
+            document.getElementById('modal-owner-email').textContent = ownerData.email;
+            document.getElementById('modal-owner-phone').textContent = ownerData.phone || 'Not provided';
+
+            // Property location
+            const locationParts = [];
+            if (roomData.property_address) locationParts.push(roomData.property_address);
+            if (roomData.property_city) locationParts.push(roomData.property_city);
+            if (roomData.property_province) locationParts.push(roomData.property_province);
+            
+            document.getElementById('modal-property-address').textContent = locationParts.join(', ') || 'Location not available';
+            document.getElementById('modal-property-location').textContent = `📍 ${roomData.property_zip_code || ''}`;
+
+            // Action buttons
+            document.getElementById('contact-owner-btn').onclick = () => {
+                // TODO: Implement contact owner functionality (open messenger)
+                alert(`Contact ${ownerData.full_name} at ${ownerData.email}`);
+            };
+
+            document.getElementById('remove-room-btn').onclick = () => {
+                if (confirm('Are you sure you want to remove this room?')) {
+                    removeRoom(roomData.id);
+                }
+            };
+
+            document.getElementById('close-room-details').onclick = () => {
+                roomDetailsModal.classList.add('hidden');
+            };
+
+            // Show modal
+            roomDetailsModal.classList.remove('hidden');
+        }
+
+        function removeRoom(roomId) {
+            // Clear the rooms container
+            roomsContainer.innerHTML = '';
+            
+            const emptyState = document.createElement('div');
+            emptyState.className = 'text-center py-8';
+            emptyState.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-text-muted mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 4v4m4-4v4" />
+                </svg>
+                <p class="text-text-muted">No boarding information yet. Enter your boarding key above to get started.</p>
+            `;
+            roomsContainer.appendChild(emptyState);
+            
+            roomDetailsModal.classList.add('hidden');
+            showMessage('Room removed successfully', 'success');
+        }
+
+        // Event listeners
+        if (submitBtn) {
+            submitBtn.addEventListener('click', submitBoardingKey);
+        }
+
+        if (boardingKeyInput) {
+            boardingKeyInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitBoardingKey();
+                }
+            });
+        }
+
+    })();
+    </script>
+</div>
+{% endif %}

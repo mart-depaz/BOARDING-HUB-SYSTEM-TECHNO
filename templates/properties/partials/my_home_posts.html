@@ -1,0 +1,1102 @@
+<!--
+templates/properties/partials/my_home_posts.html
+-->
+
+<div class="myhome-panel" data-panel="posts">
+    {% csrf_token %}
+    <div class="space-y-6">
+        <!-- Create Post Modal (owner-only) -->
+        {% if user.is_authenticated and user.profile.role == 'property_owner' %}
+        <div
+            id="post-form-modal"
+            class="hidden fixed inset-0 z-[70] bg-black/70 backdrop-blur flex items-center justify-center px-4"
+        >
+            <div
+                class="glass-card rounded-2xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+                <header
+                    class="p-6 border-b border-white/10 sticky top-0 bg-inherit z-10"
+                >
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-xl font-semibold text-white mb-1">
+                                Create New Post
+                            </h1>
+                            <p class="text-text-muted text-sm">
+                                Share an update with your community.
+                            </p>
+                        </div>
+                        <button
+                            id="post-modal-close"
+                            class="text-text-muted hover:text-white text-2xl"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                </header>
+                <form id="post-form" class="p-6 space-y-6">
+                    <!-- User Info Bar (with profile picture) -->
+                    <div
+                        id="post-form-user-info"
+                        class="flex items-start space-x-3 border-b border-white/10 pb-4"
+                    >
+                        <!-- Profile picture will be injected here by JavaScript -->
+                    </div>
+
+                    <!-- Main Text Input Area -->
+                    <div class="relative">
+                        <textarea
+                            id="post-content"
+                            name="content"
+                            required
+                            class="w-full p-4 pr-12 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-text-muted focus:outline-none focus:border-neon-cyan focus:ring-2 focus:ring-neon-cyan/20 resize-y min-h-[120px]"
+                            placeholder="What's on your mind?"
+                        ></textarea>
+                        <button
+                            type="button"
+                            id="emoji-picker-btn"
+                            class="absolute bottom-4 right-4 text-2xl hover:scale-110 transition cursor-pointer"
+                            title="Add emoji"
+                        >
+                            😊
+                        </button>
+                    </div>
+                    <!-- Emoji Picker Modal -->
+                    <div
+                        id="emoji-picker-modal"
+                        class="hidden fixed inset-0 z-[70] bg-black/70 backdrop-blur flex items-center justify-center px-4"
+                    >
+                        <div
+                            class="glass-card rounded-2xl p-6 border border-white/10 max-w-2xl w-full max-h-[80vh] flex flex-col"
+                        >
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xl font-semibold text-white">
+                                    Select Emoji
+                                </h3>
+                                <button
+                                    id="emoji-modal-close"
+                                    class="text-text-muted hover:text-white text-2xl"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                            <div
+                                id="emoji-picker-container"
+                                class="overflow-y-auto flex-1"
+                            >
+                                <div
+                                    class="grid grid-cols-8 gap-2"
+                                    id="emoji-grid"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected Images Preview -->
+                    <div id="image-preview-container" class="hidden">
+                        <div
+                            class="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                            id="image-preview-grid"
+                        ></div>
+                    </div>
+
+                    <!-- Attachment Options -->
+                    <div
+                        class="flex justify-between space-x-2 border-y border-white/10 py-3"
+                    >
+                        <!-- Button: Photo/Video -->
+                        <button
+                            type="button"
+                            id="photo-video-btn"
+                            class="flex-1 flex items-center justify-center p-2 rounded-xl bg-white/5 border border-white/10 text-text-muted hover:text-neon-cyan hover:border-neon-cyan/40 hover:bg-neon-cyan/10 transition"
+                        >
+                            <svg
+                                class="w-6 h-6 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                ></path>
+                            </svg>
+                            <span class="text-sm font-medium hidden sm:inline"
+                                >Photo/Video</span
+                            >
+                        </button>
+                        <input
+                            type="file"
+                            id="image-input"
+                            accept="image/*,video/*"
+                            multiple
+                            class="hidden"
+                        />
+
+                        <!-- Button: Location -->
+                        <button
+                            type="button"
+                            id="location-btn"
+                            class="flex-1 flex items-center justify-center p-2 rounded-xl bg-white/5 border border-white/10 text-text-muted hover:text-neon-cyan hover:border-neon-cyan/40 hover:bg-neon-cyan/10 transition"
+                        >
+                            <svg
+                                class="w-6 h-6 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+                                ></path>
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                ></path>
+                            </svg>
+                            <span class="text-sm font-medium hidden sm:inline"
+                                >Check In</span
+                            >
+                        </button>
+                    </div>
+
+                    <!-- Location Selection Container (Hidden by default) -->
+                    <div id="location-input-container" class="hidden space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Location My Location Button -->
+                            <button
+                                type="button"
+                                id="location-profile-btn"
+                                class="px-4 py-3 rounded-xl bg-neon-cyan/20 border border-neon-cyan/60 text-neon-cyan text-xs font-semibold hover:bg-neon-cyan/30 transition flex items-center justify-center space-x-2"
+                            >
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+                                    ></path>
+                                </svg>
+                                <span>My Location</span>
+                            </button>
+                            <!-- Location Auto-Detect Button -->
+                            <button
+                                type="button"
+                                id="location-auto-detect-btn"
+                                class="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-text-muted text-xs font-semibold hover:text-neon-cyan hover:border-neon-cyan/40 hover:bg-neon-cyan/10 transition flex items-center justify-center space-x-2"
+                            >
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                    ></path>
+                                </svg>
+                                <span>Auto Detect</span>
+                            </button>
+                        </div>
+
+                        <!-- Location Profile Dropdown -->
+                        <div
+                            id="location-profile-selector"
+                            class="hidden space-y-3"
+                        >
+                            <div class="relative">
+                                <select
+                                    id="location-dropdown"
+                                    class="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-cyan focus:ring-2 focus:ring-neon-cyan/30 appearance-none cursor-pointer pr-10"
+                                >
+                                    <option value="">
+                                        -- Select a saved location --
+                                    </option>
+                                </select>
+                                <svg
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white pointer-events-none"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                                    ></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Location Auto-Detect Input -->
+                        <div
+                            id="location-auto-detect-input"
+                            class="hidden space-y-3"
+                        >
+                            <input
+                                type="text"
+                                id="location-auto-text"
+                                name="location-auto"
+                                class="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-text-muted focus:outline-none focus:border-neon-cyan"
+                                placeholder="Enter location or address"
+                            />
+                            <p class="text-xs text-text-muted">
+                                You can manually enter your boarding house
+                                location here.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex space-x-3">
+                        <button
+                            id="post-button"
+                            type="submit"
+                            class="flex-1 bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold py-3 rounded-2xl hover:bg-neon-cyan/30 hover:border-neon-cyan transition"
+                        >
+                            Post
+                        </button>
+                        <button
+                            type="button"
+                            id="cancel-create-form"
+                            class="px-6 py-3 rounded-2xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal - OUTSIDE of form (owner-only) -->
+        <div
+            id="delete-confirm-modal"
+            class="hidden fixed inset-0 z-[70] bg-black/70 backdrop-blur flex items-center justify-center px-4"
+        >
+            <div
+                class="glass-card rounded-2xl p-6 border border-white/10 max-w-sm w-full"
+            >
+                <div class="flex items-center justify-between mb-4">
+                    <h3
+                        id="delete-modal-title"
+                        class="text-xl font-semibold text-white"
+                    >
+                        Delete Post
+                    </h3>
+                    <button
+                        id="delete-modal-close"
+                        class="text-text-muted hover:text-white text-2xl"
+                    >
+                        &times;
+                    </button>
+                </div>
+                <p id="delete-modal-message" class="text-text-muted mb-6">
+                    Are you sure you want to delete this post? This action
+                    cannot be undone.
+                </p>
+                <div class="flex space-x-3">
+                    <button
+                        id="delete-cancel-btn"
+                        class="flex-1 px-4 py-2 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        id="delete-confirm-btn"
+                        class="flex-1 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500 text-red-400 text-sm font-semibold hover:bg-red-500/30 transition"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations removed — feed shows posts directly -->
+
+        <!-- Post Feed -->
+        <div id="post-feed" class="space-y-6">
+            {% for post in owner_posts %}
+                {% include "properties/partials/post_card.html" with post=post show_actions=True post_source='property' is_server=True %}
+            {% empty %}
+                <!-- Example Posts (shown when no posts exist) -->
+                <div id="example-posts" class="space-y-6"></div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- User Profile Modal -->
+<div
+    id="user-profile-modal"
+    class="hidden fixed inset-0 z-[70] bg-black/70 backdrop-blur flex items-center justify-center px-4"
+>
+    <div
+        class="glass-card rounded-2xl border border-white/10 max-w-md w-full max-h-[90vh] overflow-y-auto"
+    >
+        <div class="p-6 border-b border-white/10 sticky top-0 bg-inherit z-10">
+            <div class="flex items-center justify-between">
+                <h1 class="text-xl font-semibold text-white">User Profile</h1>
+                <button
+                    id="profile-modal-close"
+                    class="text-text-muted hover:text-white text-2xl"
+                >
+                    &times;
+                </button>
+            </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- Profile Avatar -->
+            <div class="flex flex-col items-center">
+                <div
+                    id="profile-avatar"
+                    class="w-24 h-24 rounded-full bg-gradient-to-br from-neon-cyan/30 to-neon-purple/30 border border-white/10 flex items-center justify-center"
+                >
+                    <span
+                        id="profile-avatar-initial"
+                        class="text-3xl font-bold text-neon-cyan"
+                        >?</span
+                    >
+                </div>
+            </div>
+
+            <!-- Profile Information -->
+            <div class="space-y-4">
+                <div>
+                    <p
+                        class="text-xs text-text-muted uppercase tracking-[0.4em]"
+                    >
+                        Full Name
+                    </p>
+                    <p
+                        id="profile-name"
+                        class="text-white font-semibold text-lg mt-1"
+                    >
+                        Loading...
+                    </p>
+                </div>
+
+                <div>
+                    <p
+                        class="text-xs text-text-muted uppercase tracking-[0.4em]"
+                    >
+                        Email
+                    </p>
+                    <p id="profile-email" class="text-white text-sm mt-1">
+                        Loading...
+                    </p>
+                </div>
+
+                <div>
+                    <p
+                        class="text-xs text-text-muted uppercase tracking-[0.4em]"
+                    >
+                        Department
+                    </p>
+                    <p id="profile-department" class="text-white text-sm mt-1">
+                        Loading...
+                    </p>
+                </div>
+
+                <div>
+                    <p
+                        class="text-xs text-text-muted uppercase tracking-[0.4em]"
+                    >
+                        Year Level
+                    </p>
+                    <p id="profile-year" class="text-white text-sm mt-1">
+                        Loading...
+                    </p>
+                </div>
+
+                <div>
+                    <p
+                        class="text-xs text-text-muted uppercase tracking-[0.4em]"
+                    >
+                        Phone Number
+                    </p>
+                    <p id="profile-phone" class="text-white text-sm mt-1">
+                        Not provided
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-3 border-t border-white/10 pt-6">
+                <button
+                    id="profile-view-own-btn"
+                    class="hidden w-full px-4 py-3 rounded-xl bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-semibold hover:bg-neon-cyan/30 transition"
+                >
+                    ⚙️ View My Profile Settings
+                </button>
+                <button
+                    id="profile-chat-btn"
+                    class="w-full px-4 py-3 rounded-xl bg-neon-cyan text-gray-900 font-semibold hover:bg-neon-cyan/90 transition"
+                >
+                    💬 Send Message
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Helper: try common profile-setup URLs and redirect to the first that exists
+    window.findAndRedirectToProfileSetup = async function() {
+        const candidates = [
+            '/properties/dashboard/profile/',
+            '/students/complete-profile/',
+            '/accounts/profile-setup/',
+            '/admin-panel/profile/'
+        ];
+        for (const url of candidates) {
+            try {
+                const res = await fetch(url, { method: 'HEAD', credentials: 'same-origin' });
+                if (res && res.ok) {
+                    console.log('Redirecting to:', url);
+                    window.location.href = url;
+                    return true;
+                }
+            } catch (err) {
+                console.warn('Failed to probe ' + url, err);
+            }
+        }
+        console.warn('No profile-setup URL found; opening modal instead');
+        // Fallback: if we can open profile modal, do that
+        if (typeof window.loadUserProfile === 'function') {
+            try {
+                const currentUserId = {{ request.user.id }};
+                window.loadUserProfile(currentUserId);
+                document.getElementById('user-profile-modal')?.classList.remove('hidden');
+                return false;
+            } catch (err) {
+                console.error('Error loading profile modal', err);
+            }
+        }
+        return false;
+    };
+
+    (function() {
+        const currentUserId = {{ request.user.id }};
+        const userProfileModal = document.getElementById('user-profile-modal');
+        const profileModalClose = document.getElementById('profile-modal-close');
+        let currentProfileUserId = null;
+
+        // Close profile modal
+        profileModalClose.addEventListener('click', () => {
+            userProfileModal.classList.add('hidden');
+        });
+
+        userProfileModal.addEventListener('click', (e) => {
+            if (e.target === userProfileModal) {
+                userProfileModal.classList.add('hidden');
+            }
+        });
+
+        // Menu handled by delegated listeners added later (DOMContentLoaded)
+
+        // Helper: resolve user id from various DOM attributes
+        function resolveUserIdFromElement(el) {
+            if (!el) return null;
+            return el.dataset.userId || el.getAttribute('data-user-id') || el.closest('[data-author-id]')?.dataset.authorId || null;
+        }
+
+        // View Profile (inline menu)
+        document.addEventListener('click', async (e) => {
+            const viewProfileBtn = e.target.closest('.view-profile-action');
+            if (viewProfileBtn) {
+                let userId = resolveUserIdFromElement(viewProfileBtn);
+                if (!userId) userId = String(currentUserId);
+
+                console.log('View Profile clicked for user:', userId, 'current user:', currentUserId);
+
+                // If clicking own profile, redirect to profile setup
+                if (String(userId) === String(currentUserId)) {
+                    console.log('Own profile clicked, redirecting to setup');
+                    await window.findAndRedirectToProfileSetup();
+                    e.stopPropagation();
+                    return;
+                }
+                console.log('Other user profile clicked, showing modal');
+                await loadUserProfile(userId);
+                userProfileModal.classList.remove('hidden');
+                e.stopPropagation();
+            }
+        });
+
+        // Start Chat (inline menu)
+        document.addEventListener('click', (e) => {
+            const chatBtn = e.target.closest('.start-chat-action');
+            if (chatBtn) {
+                let userId = resolveUserIdFromElement(chatBtn);
+                if (!userId) userId = String(currentUserId);
+                startChat(userId);
+                e.stopPropagation();
+            }
+        });
+
+        // View Own Profile
+        document.getElementById('profile-view-own-btn').addEventListener('click', async () => {
+            await window.findAndRedirectToProfileSetup();
+        });
+
+        // Send message from profile
+        document.getElementById('profile-chat-btn').addEventListener('click', async () => {
+            if (!currentProfileUserId) return;
+
+            if (currentProfileUserId === currentUserId) {
+                // Own profile - redirect to profile setup
+                await window.findAndRedirectToProfileSetup();
+            } else {
+                // Other user - start chat
+                startChat(currentProfileUserId);
+            }
+        });
+
+        // Load user profile data
+        async function loadUserProfile(userId) {
+            currentProfileUserId = parseInt(userId);
+
+            try {
+                // Fetch user data from API
+                const response = await fetch(`/properties/api/user/${userId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                    }
+                });
+
+                let userData;
+                if (response?.ok) {
+                    const data = await response.json();
+                    userData = data.user;
+                } else {
+                    // Fallback: use data from visible posts
+                    userData = getUserDataFromPost(userId);
+                }
+
+                // Update modal
+                document.getElementById('profile-avatar-initial').textContent = userData.full_name.charAt(0).toUpperCase();
+                document.getElementById('profile-name').textContent = userData.full_name;
+                document.getElementById('profile-email').textContent = userData.email;
+                document.getElementById('profile-department').textContent = userData.department || 'Not specified';
+                document.getElementById('profile-year').textContent = userData.year_level || 'Not specified';
+                document.getElementById('profile-phone').textContent = userData.phone || 'Not provided';
+
+                // Show "View My Profile Settings" button if it's the current user
+                const viewOwnBtn = document.getElementById('profile-view-own-btn');
+                const chatBtn = document.getElementById('profile-chat-btn');
+
+                if (userId == currentUserId) {
+                    viewOwnBtn.classList.remove('hidden');
+                    chatBtn.textContent = '⚙️ Profile Settings';
+                } else {
+                    viewOwnBtn.classList.add('hidden');
+                    chatBtn.textContent = '💬 Send Message';
+                }
+            } catch (err) {
+                console.error('Error loading profile:', err);
+            }
+        }
+
+        // Get user data from visible posts as fallback
+        function getUserDataFromPost(userId) {
+            // This would need to be customized based on your actual data structure
+            const article = document.querySelector(`[data-author-id="${userId}"]`);
+            const name = article?.querySelector('.post-author-name')?.textContent || 'User';
+
+            return {
+                full_name: name,
+                email: 'user@example.com',
+                department: 'Student',
+                year_level: 'Not specified',
+                phone: null
+            };
+        }
+
+        // Start chat with user
+        async function startChat(userId) {
+            console.log('=== startChat function called ===');
+            console.log('startChat called with userId:', userId, 'current user:', currentUserId);
+
+            // Store the target user id globally so messenger can access it
+            window.pendingChatUserId = String(userId);
+            console.log('Set window.pendingChatUserId to:', window.pendingChatUserId);
+
+            // Close profile modal
+            userProfileModal.classList.add('hidden');
+            console.log('Closed profile modal');
+
+            // Ensure messenger panel is visible
+            const messengerPanel = document.querySelector('[data-panel="messenger"]');
+            const postsPanel = document.querySelector('[data-panel="posts"]');
+            console.log('Found panels:', { messengerPanel: !!messengerPanel, postsPanel: !!postsPanel });
+
+            if (messengerPanel && postsPanel) {
+                console.log('Switching to messenger panel');
+                console.log('Before toggle - messenger hidden?', messengerPanel.classList.contains('hidden'));
+                console.log('Before toggle - posts hidden?', postsPanel.classList.contains('hidden'));
+                postsPanel.classList.add('hidden');
+                messengerPanel.classList.remove('hidden');
+                console.log('After toggle - messenger hidden?', messengerPanel.classList.contains('hidden'));
+                console.log('After toggle - posts hidden?', postsPanel.classList.contains('hidden'));
+            }
+
+            // Wait a tick for DOM to update, then dispatch event
+            console.log('Waiting 50ms before dispatching event...');
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // Navigate to full-screen messenger page (preferred behavior)
+            try {
+                const messengerUrl = '/properties/messenger/?user_id=' + encodeURIComponent(String(userId));
+                console.log('Redirecting to full messenger page:', messengerUrl);
+                // Use location.assign so it's recorded in history
+                window.location.assign(messengerUrl);
+                return; // stop here — navigation will occur
+            } catch (err) {
+                console.warn('Could not redirect to full messenger page, falling back to inline behavior', err);
+            }
+
+            // Dispatch event for messenger to open conversation by user id (inline fallback)
+            try {
+                console.log('Dispatching openConversationByUser event for userId (fallback):', userId);
+                const event = new CustomEvent('openConversationByUser', { detail: { userId: String(userId) } });
+                document.dispatchEvent(event);
+                console.log('Event dispatched successfully (fallback)');
+
+                // After dispatch, give messenger a moment to react; if no conversation was opened,
+                // use a fallback to directly show the chat area and populate header.
+                await new Promise(resolve => setTimeout(resolve, 180));
+
+                try {
+                    // If messengerState is available, check whether a conversation was selected
+                    const ms = window.messengerState || {};
+                    const convs = ms.conversations || [];
+                    const found = convs.find(c => String(c.participant?.id) === String(userId));
+                    if (found) {
+                        console.log('Fallback check: existing conversation found in messengerState, delegating to selectConversation');
+                        if (typeof ms.selectConversation === 'function') {
+                            try { ms.selectConversation(found.id); } catch (e) { console.warn('ms.selectConversation failed', e); }
+                        } else if (typeof window.messengerState.selectConversation === 'function') {
+                            try { window.messengerState.selectConversation(found.id); } catch (e) { console.warn('window.messengerState.selectConversation failed', e); }
+                        }
+                        return;
+                    }
+
+                    console.log('Fallback: no existing conversation found. Forcing chat UI open for userId:', userId);
+
+                    // Attempt to fetch user display name to show in the header
+                    let displayName = null;
+                    try {
+                        const resp = await fetch(`/properties/api/user/${userId}/`);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            displayName = data.name || data.full_name || data.username || null;
+                            console.log('Fetched user for fallback header:', displayName, data);
+                        }
+                    } catch (err) {
+                        console.warn('Could not fetch user for fallback header', err);
+                    }
+
+                    // Direct DOM fallback: ensure messenger view elements are visible and populated
+                    const chatArea = document.getElementById('chat-area');
+                    const emptyState = document.getElementById('empty-state');
+                    const chatRecipientName = document.getElementById('chat-recipient-name');
+                    const chatAvatarInitial = document.getElementById('chat-avatar-initial');
+                    const messageInputEl = document.getElementById('message-input');
+                    const sendBtnEl = document.getElementById('send-message-btn');
+                    const conversationView = document.getElementById('conversationView');
+
+                    if (emptyState) emptyState.classList.add('hidden');
+                    if (chatArea) chatArea.classList.remove('hidden');
+                    if (conversationView) conversationView.classList.remove('hidden');
+                    if (chatRecipientName) chatRecipientName.textContent = displayName || ('User #' + userId);
+                    if (chatRecipientName) chatRecipientName.dataset.userId = userId;
+                    if (chatAvatarInitial) chatAvatarInitial.textContent = (displayName ? displayName.charAt(0).toUpperCase() : String(userId).charAt(0));
+                    if (messageInputEl) { messageInputEl.disabled = false; messageInputEl.focus(); }
+                    if (sendBtnEl) sendBtnEl.disabled = false;
+
+                    // Keep pendingChatUserId for messenger to pick up if it later refreshes conversations
+                    window.pendingChatUserId = String(userId);
+
+                } catch (err) {
+                    console.error('Fallback handler failed', err);
+                }
+            } catch (err) {
+                console.error('Could not dispatch openConversationByUser', err);
+            }
+        }
+        // Expose functions and current user id to window for floating menu use
+        try {
+            window.startChat = startChat;
+            window.loadUserProfile = loadUserProfile;
+            window.CURRENT_USER_ID = String(currentUserId);
+        } catch (err) {
+            // ignore
+        }
+    })();
+</script>
+<script>
+    // Floating author menu (avoids clipping from overflow:hidden ancestors)
+    (function () {
+        let floatingMenu = null;
+
+        function createMenu() {
+            floatingMenu = document.createElement("div");
+            floatingMenu.id = "floating-author-menu";
+            floatingMenu.style.position = "fixed";
+            floatingMenu.style.zIndex = "99999";
+            floatingMenu.style.minWidth = "160px";
+            floatingMenu.style.borderRadius = "12px";
+            floatingMenu.style.overflow = "hidden";
+            floatingMenu.style.boxShadow = "0 8px 24px rgba(0,0,0,0.5)";
+            floatingMenu.style.background = "rgba(17,24,39,0.98)";
+            floatingMenu.style.border = "1px solid rgba(255,255,255,0.06)";
+            floatingMenu.style.display = "none";
+
+            floatingMenu.innerHTML = `
+            <button class="floating-view btn" style="display:block;padding:10px 14px;width:100%;text-align:left;color:#fff;background:transparent;border:0;cursor:pointer">👤 View Profile</button>
+            <button class="floating-chat btn" style="display:block;padding:10px 14px;width:100%;text-align:left;color:#06b6d4;background:transparent;border:0;cursor:pointer">💬 Chat in Messenger</button>
+        `;
+
+            document.body.appendChild(floatingMenu);
+
+            // handlers
+            floatingMenu
+                .querySelector(".floating-view")
+                .addEventListener("click", function (e) {
+                    const uid =
+                        floatingMenu.dataset.userId ||
+                        String(window.CURRENT_USER_ID || "");
+                    if (uid) {
+                        // If it's the current user, redirect to profile setup
+                        if (
+                            window.CURRENT_USER_ID &&
+                            String(uid) === String(window.CURRENT_USER_ID)
+                        ) {
+                            window.findAndRedirectToProfileSetup();
+                        } else {
+                            if (typeof window.loadUserProfile === "function")
+                                window.loadUserProfile(uid);
+                            document
+                                .getElementById("user-profile-modal")
+                                ?.classList.remove("hidden");
+                        }
+                    }
+                    hideMenu();
+                });
+
+            floatingMenu
+                .querySelector(".floating-chat")
+                .addEventListener("click", function (e) {
+                    const uid =
+                        floatingMenu.dataset.userId ||
+                        String(window.CURRENT_USER_ID || "");
+                    if (uid) {
+                        if (typeof window.startChat === "function")
+                            window.startChat(uid);
+                    }
+                    hideMenu();
+                });
+        }
+
+        function showMenuForButton(btn) {
+            if (!floatingMenu) createMenu();
+            const rect = btn.getBoundingClientRect();
+            // position below the button, adjust if near viewport edges
+            const top = rect.bottom + 6;
+            let left = rect.left;
+            // ensure menu stays inside viewport
+            const menuWidth = 220;
+            if (left + menuWidth > window.innerWidth - 8) {
+                left = window.innerWidth - menuWidth - 8;
+            }
+
+            floatingMenu.style.left = left + "px";
+            floatingMenu.style.top = top + "px";
+            floatingMenu.style.display = "block";
+            // Resolve user id from the button or its ancestors
+            floatingMenu.dataset.userId =
+                btn.dataset.userId ||
+                btn.getAttribute("data-user-id") ||
+                btn.closest("[data-author-id]")?.dataset.authorId ||
+                String(window.CURRENT_USER_ID || "");
+        }
+
+        function hideMenu() {
+            if (floatingMenu) floatingMenu.style.display = "none";
+        }
+
+        // Attach handlers to each author name (works even when posts are dynamically added)
+        function bindAuthorNames() {
+            document.querySelectorAll(".post-author-name").forEach((btn) => {
+                if (btn.__floatingBound) return;
+                btn.__floatingBound = true;
+                btn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    showMenuForButton(btn);
+                });
+            });
+        }
+
+        // Close when clicking anywhere else
+        document.addEventListener("click", function () {
+            hideMenu();
+        });
+
+        // Initial bind
+        if (document.readyState === "loading")
+            document.addEventListener("DOMContentLoaded", bindAuthorNames);
+        else bindAuthorNames();
+
+        // Also observe post-feed for new items (e.g., after AJAX create)
+        const feed = document.getElementById("post-feed");
+        if (feed && window.MutationObserver) {
+            const mo = new MutationObserver(() => bindAuthorNames());
+            mo.observe(feed, { childList: true, subtree: true });
+        }
+    })();
+</script>
+
+<script>
+    // Add direct listeners to author name buttons to reliably toggle the author menu
+    (function setupAuthorMenus() {
+        function init() {
+            const authorButtons =
+                document.querySelectorAll(".post-author-name");
+            authorButtons.forEach((btn) => {
+                btn.style.cursor = "pointer";
+                // avoid double-binding
+                if (btn.__authorMenuBound) return;
+                btn.__authorMenuBound = true;
+
+                btn.addEventListener("click", function (ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    const parent = btn.parentElement;
+                    if (!parent) return;
+                    const menu = parent.querySelector(".post-author-menu");
+                    if (!menu) return;
+
+                    // Close other menus
+                    document
+                        .querySelectorAll(".post-author-menu")
+                        .forEach((m) => {
+                            if (m !== menu) m.classList.add("hidden");
+                        });
+
+                    menu.classList.toggle("hidden");
+                });
+            });
+
+            // Close when clicking outside
+            // Ensure we only bind once
+            if (!document.__authorMenuCloseBound) {
+                document.__authorMenuCloseBound = true;
+                document.addEventListener("click", function (e) {
+                    if (
+                        !e.target.closest(".post-author-menu") &&
+                        !e.target.closest(".post-author-name")
+                    ) {
+                        document
+                            .querySelectorAll(".post-author-menu")
+                            .forEach((m) => m.classList.add("hidden"));
+                    }
+                });
+            }
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", init);
+        } else {
+            init();
+        }
+    })();
+</script>
+
+<script>
+    // Image preview + create-post UI handling (add mode)
+    (function(){
+        const postFormModal = document.getElementById('post-form-modal');
+        const postModalClose = document.getElementById('post-modal-close');
+        const photoVideoBtn = document.getElementById('photo-video-btn');
+        const imageInput = document.getElementById('image-input');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreviewGrid = document.getElementById('image-preview-grid');
+        const postForm = document.getElementById('post-form');
+        const postButton = document.getElementById('post-button');
+        const cancelCreate = document.getElementById('cancel-create-form');
+        const postContent = document.getElementById('post-content');
+
+        if (!photoVideoBtn || !imageInput || !imagePreviewGrid || !postForm) return;
+
+        let selectedFiles = [];
+
+        photoVideoBtn.addEventListener('click', (e) => { e.preventDefault(); imageInput.click(); });
+        if (postModalClose) postModalClose.addEventListener('click', closeCreateForm);
+        if (cancelCreate) cancelCreate.addEventListener('click', closeCreateForm);
+
+        imageInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            if (!files.length) return;
+            files.forEach((file) => {
+                const key = `${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+                selectedFiles.push({ key, file });
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'relative';
+                previewDiv.dataset.key = key;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    if (file.type.startsWith('video')) {
+                        previewDiv.innerHTML = `\n                        <video src="${ev.target.result}" class="w-full h-40 object-contain rounded-xl border border-white/10 bg-black/20" controls></video>\n                        <button type=\"button\" class=\"absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/80 text-white text-xs font-bold hover:bg-red-500 transition remove-image\" data-key=\"${key}\">×</button>\n                    `;
+                    } else {
+                        previewDiv.innerHTML = `\n                        <img src="${ev.target.result}" alt="Preview" class="w-full h-40 object-cover rounded-xl border border-white/10">\n                        <button type=\"button\" class=\"absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/80 text-white text-xs font-bold hover:bg-red-500 transition remove-image\" data-key=\"${key}\">×</button>\n                    `;
+                    }
+                    imagePreviewGrid.appendChild(previewDiv);
+                    imagePreviewContainer.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            });
+            e.target.value = '';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-image')) {
+                const key = e.target.dataset.key;
+                selectedFiles = selectedFiles.filter(f => f.key !== key);
+                const el = imagePreviewGrid.querySelector(`[data-key="${key}"]`);
+                if (el) el.remove();
+                if (selectedFiles.length === 0) imagePreviewContainer.classList.add('hidden');
+            }
+        });
+
+        postForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const content = postContent.value.trim();
+            if (!content && selectedFiles.length === 0) return;
+            postButton.disabled = true;
+            const formData = new FormData();
+            formData.append('content', content);
+            selectedFiles.forEach(f => formData.append('images', f.file));
+            try {
+                const res = await fetch('/properties/api/create-post/', {
+                    method: 'POST', headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '' }, body: formData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.post_html) {
+                        document.getElementById('post-feed').insertAdjacentHTML('afterbegin', data.post_html);
+                    } else {
+                        addLocalPostToFeed({ content, images: selectedFiles.map(f=>URL.createObjectURL(f.file)), author_name: '{{ user.get_full_name|default:user.username }}', author_id: {{ request.user.id }} });
+                    }
+                } else {
+                    addLocalPostToFeed({ content, images: selectedFiles.map(f=>URL.createObjectURL(f.file)), author_name: '{{ user.get_full_name|default:user.username }}', author_id: {{ request.user.id }} });
+                }
+            } catch (err) {
+                console.error(err);
+                addLocalPostToFeed({ content, images: selectedFiles.map(f=>URL.createObjectURL(f.file)), author_name: '{{ user.get_full_name|default:user.username }}', author_id: {{ request.user.id }} });
+            } finally {
+                postButton.disabled = false; closeCreateForm();
+            }
+        });
+
+    function addLocalPostToFeed(post) {
+        const postFeed = document.getElementById('post-feed');
+        const article = document.createElement('article');
+        article.className = 'glass-card rounded-2xl p-6 border border-white/10';
+        article.innerHTML = `\n            <div class=\"flex items-center justify-between\">\n                <div>\n                    <p class=\"text-xs text-text-muted uppercase\">just now</p>\n                    <div class=\"flex items-center gap-3 mt-1\">\n                        <button class=\"post-author-name text-white font-medium hover:text-neon-cyan transition\" data-user-id=\"${post.author_id}\">${escapeHtml(post.author_name)}</button>\n                    </div>\n                </div>\n            </div>\n            <p class=\"text-text-muted mt-4 text-sm\">${linkifyText(post.content || '')}</p>\n        `;
+        if (post.images && post.images.length) {
+            const grid = document.createElement('div'); grid.className='grid grid-cols-2 mt-4 gap-3';
+            post.images.forEach(src=>{ const img=document.createElement('img'); img.src=src; img.className='rounded-xl w-full h-40 object-cover border border-white/10'; grid.appendChild(img); });
+            article.appendChild(grid);
+        }
+
+        function closeCreateForm(){ postContent.value=''; selectedFiles=[]; imagePreviewGrid.innerHTML=''; if(imagePreviewContainer) imagePreviewContainer.classList.add('hidden'); if(postFormModal) postFormModal.classList.add('hidden'); }
+
+        function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>\"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;' })[m]); }
+        function linkifyText(text){ if(!text) return ''; return escapeHtml(text).replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">$1</a>'); }
+
+    // Attach event listeners to posts
+    function attachPostEventListeners() {
+        // Post actions menu
+        document.querySelectorAll('.post-actions-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const postId = this.dataset.postId;
+                const menu = document.getElementById(`actions-menu-${postId}`);
+                document.querySelectorAll('[id^="actions-menu-"]').forEach(m => {
+                    if (m.id !== menu.id) m.classList.add('hidden');
+                });
+            });
+
+            // Delete buttons
+            document.querySelectorAll('.delete-post-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const postId = this.dataset.postId;
+                    const menu = document.getElementById(`actions-menu-${postId}`);
+                    if (menu) menu.classList.add('hidden');
+                    if (typeof deletePost === 'function') deletePost(postId);
+                });
+            });
+
+            // Edit buttons
+            document.querySelectorAll('.edit-post-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const postId = this.dataset.postId;
+                    const menu = document.getElementById(`actions-menu-${postId}`);
+                    if (menu) menu.classList.add('hidden');
+                    if (typeof editPost === 'function') editPost(postId);
+                });
+            });
+
+            // Comments buttons
+            document.querySelectorAll('.comments-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const postId = this.dataset.postId;
+                    if (typeof openCommentsModal === 'function') openCommentsModal(postId);
+                });
+            });
+
+            // Like buttons
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const postId = this.dataset.postId;
+                    if (typeof toggleLike === 'function') toggleLike(this, postId);
+                });
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.post-actions-btn') && !e.target.closest('[id^="actions-menu-"]')) {
+                    document.querySelectorAll('[id^="actions-menu-"]').forEach(m => m.classList.add('hidden'));
+                }
+            });
+        }
+
+        // Call on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            attachPostEventListeners();
+        });
+
+    })();
+</script>
